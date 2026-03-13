@@ -9,7 +9,12 @@ exports.handler = async (event) => {
     const { email, password, action, folder, page, messageId, limit } = JSON.parse(event.body);
     if (!email || !password) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Faltan credenciales' }) };
 
-    const client = new ImapFlow({ host: 'c2741653.ferozo.com', port: 993, secure: true, auth: { user: email, pass: password }, tls: { rejectUnauthorized: false }, logger: false });
+    // Detectar servidor según dominio
+    const domain = email.split('@')[1]||'';
+    let host = 'mail.metogroup.mx';
+    if(domain.endsWith('.ar') || domain === 'metogroup.com') host = 'c2741653.ferozo.com';
+
+    const client = new ImapFlow({ host, port: 993, secure: true, auth: { user: email, pass: password }, tls: { rejectUnauthorized: false }, logger: false });
     await client.connect();
 
     if (action === 'folders') {
