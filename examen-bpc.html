@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="application-name" content="Diagnóstico BPC">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Diagnóstico BPC">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#080a0d">
+<link rel="manifest" href="manifest-diag.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Diagnóstico de Competencias · MetoGroup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET ──────────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box;}
+*,*::before,*::after{-webkit-tap-highlight-color:transparent;}
+a{color:inherit;text-decoration:none;}
+button,input{font-family:inherit;outline:none;border:none;}
+::selection{background:rgba(99,102,241,.3);}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px;}
+
+/* ─── VARIABLES ──────────────────────────────────────── */
+:root{
+  --bg:#0c0c0f;
+  --s1:#111116;
+  --s2:#16161d;
+  --s3:#1c1c26;
+  --accent:#6366f1;
+  --accent2:#818cf8;
+  --green:#22d3a5;
+  --amber:#f59e0b;
+  --red:#f43f5e;
+  --white:#f8f8ff;
+  --muted:rgba(248,248,255,.4);
+  --dim:rgba(248,248,255,.12);
+  --border:rgba(255,255,255,.06);
+  --border2:rgba(255,255,255,.11);
+}
+
+html,body{
+  height:100%;background:var(--bg);color:var(--white);
+  font-family:'Inter',system-ui,sans-serif;font-size:14px;
+  line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+
+/* fondo animado sutil */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 0%,rgba(99,102,241,.08) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 30% at 80% 100%,rgba(34,211,165,.05) 0%,transparent 50%);
+}
+
+/* ─── SCREEN ─────────────────────────────────────────── */
+.screen{display:none;position:relative;z-index:1;min-height:100vh;}
+.screen.active{display:flex;flex-direction:column;}
+
+/* ─── TOPBAR ─────────────────────────────────────────── */
+.brand-top{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:14px 28px;display:flex;align-items:center;gap:10px;
+  background:rgba(12,12,15,.85);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+}
+.brand-logo{
+  width:28px;height:28px;border-radius:7px;
+  background:linear-gradient(135deg,var(--accent),#4f46e5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:#fff;letter-spacing:-1px;
+}
+.brand-name{font-size:13px;font-weight:700;color:var(--white);letter-spacing:-.2px;}
+.brand-badge{
+  font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--accent2);background:rgba(99,102,241,.12);
+  border:1px solid rgba(99,102,241,.25);border-radius:4px;padding:2px 7px;
+}
+
+/* ─── PANTALLA ACCESO ────────────────────────────────── */
+#screen-acceso{align-items:center;justify-content:center;padding:100px 20px 48px;}
+.acc-wrap{width:100%;max-width:400px;}
+.acc-eyebrow{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
+  color:var(--accent2);margin-bottom:20px;
+}
+.acc-eyebrow::before{content:'';width:20px;height:1px;background:var(--accent2);opacity:.5;}
+.acc-h1{
+  font-size:36px;font-weight:800;line-height:1.1;letter-spacing:-.8px;
+  margin-bottom:6px;
+}
+.acc-h1 span{
+  background:linear-gradient(90deg,var(--accent2),var(--green));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.acc-sub{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:36px;}
+.field{margin-bottom:14px;}
+.field-lbl{
+  display:block;font-size:10px;font-weight:600;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--muted);margin-bottom:8px;
+}
+.field-inp{
+  width:100%;background:var(--s2);border:1px solid var(--border2);
+  border-radius:10px;color:var(--white);font-size:14px;
+  padding:13px 16px;transition:border-color .15s,box-shadow .15s;
+  font-family:inherit;
+}
+.field-inp:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(99,102,241,.15);
+}
+.field-inp::placeholder{color:rgba(248,248,255,.2);}
+.field-inp.code{
+  font-size:24px;font-weight:700;letter-spacing:10px;
+  text-align:center;font-family:'DM Mono',monospace;
+}
+.acc-btn{
+  width:100%;margin-top:8px;padding:15px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent) 0%,#4f46e5 100%);
+  color:#fff;font-size:14px;font-weight:700;letter-spacing:.3px;
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 20px rgba(99,102,241,.3);
+}
+.acc-btn:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(99,102,241,.4);}
+.acc-btn:active{transform:none;}
+.acc-err{font-size:11px;color:var(--red);text-align:center;margin-top:10px;min-height:16px;}
+.acc-footer{
+  margin-top:40px;text-align:center;font-size:10px;color:rgba(248,248,255,.15);
+  line-height:2;
+}
+.admin-link{cursor:pointer;color:rgba(99,102,241,.3);transition:color .15s;}
+.admin-link:hover{color:rgba(99,102,241,.6);}
+
+/* ─── BIENVENIDA ─────────────────────────────────────── */
+#screen-bienvenida{align-items:center;justify-content:center;padding:100px 20px 48px;}
+.bv-wrap{width:100%;max-width:520px;text-align:center;}
+.bv-avatar{
+  width:64px;height:64px;border-radius:16px;margin:0 auto 24px;
+  background:linear-gradient(135deg,var(--accent),#4f46e5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;font-weight:900;
+  box-shadow:0 12px 32px rgba(99,102,241,.35);
+  animation:popIn .5s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes popIn{from{opacity:0;transform:scale(.7) translateY(10px);}to{opacity:1;transform:scale(1) translateY(0);}}
+.bv-nombre{
+  font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px;
+  animation:slideUp .5s .1s cubic-bezier(.16,1,.3,1) both;
+}
+.bv-empresa{
+  font-size:12px;color:var(--muted);margin-bottom:36px;
+  font-weight:500;letter-spacing:.5px;
+  animation:slideUp .5s .15s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.bv-specs{
+  display:flex;gap:1px;border-radius:12px;overflow:hidden;
+  background:var(--border);margin-bottom:32px;
+  animation:slideUp .5s .2s cubic-bezier(.16,1,.3,1) both;
+}
+.bv-spec{
+  flex:1;background:var(--s2);padding:18px 12px;text-align:center;
+}
+.bv-spec-val{
+  font-size:28px;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(135deg,var(--white),rgba(248,248,255,.6));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  display:block;margin-bottom:3px;
+}
+.bv-spec-lbl{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.bv-nota{
+  background:var(--s2);border:1px solid var(--border2);border-radius:10px;
+  padding:14px 18px;font-size:12px;color:var(--muted);
+  margin-bottom:28px;line-height:1.6;text-align:left;
+  animation:slideUp .5s .25s cubic-bezier(.16,1,.3,1) both;
+}
+.bv-nota strong{color:var(--white);}
+.bv-start{
+  width:100%;padding:16px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),#4f46e5);
+  color:#fff;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 20px rgba(99,102,241,.3);
+  animation:slideUp .5s .3s cubic-bezier(.16,1,.3,1) both;
+}
+.bv-start:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(99,102,241,.4);}
+
+/* ─── DIAGNÓSTICO ────────────────────────────────────── */
+#screen-diag{padding:0;align-items:stretch;}
+.diag-header{
+  position:sticky;top:0;z-index:50;
+  background:rgba(12,12,15,.9);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:12px 24px;display:flex;align-items:center;gap:12px;
+}
+.diag-prog-wrap{flex:1;display:flex;align-items:center;gap:10px;}
+.diag-prog-bar-outer{flex:1;height:4px;background:var(--border2);border-radius:4px;overflow:hidden;}
+.diag-prog-fill{height:100%;border-radius:4px;
+  background:linear-gradient(90deg,var(--accent),var(--green));
+  transition:width .4s cubic-bezier(.4,0,.2,1);}
+.diag-prog-txt{font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap;}
+.diag-timer{
+  font-size:13px;font-weight:700;color:var(--muted);
+  font-family:'DM Mono',monospace;letter-spacing:1px;
+}
+.diag-timer.warn{color:var(--amber);}
+.diag-timer.crit{color:var(--red);animation:blink .8s ease-in-out infinite;}
+@keyframes blink{50%{opacity:.4;}}
+.diag-dots{display:flex;gap:3px;flex-wrap:wrap;max-width:200px;}
+.q-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);cursor:pointer;transition:all .15s;}
+.q-dot.done{background:var(--accent);opacity:.7;}
+.q-dot.curr{background:var(--accent);box-shadow:0 0 0 2px rgba(99,102,241,.4);}
+
+.diag-body{flex:1;max-width:640px;width:100%;margin:0 auto;padding:40px 20px 100px;}
+
+/* área pill */
+.q-area-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:4px 12px;border-radius:20px;margin-bottom:20px;
+}
+.pill-cierre{background:rgba(99,102,241,.15);color:var(--accent2);}
+.pill-objeciones{background:rgba(245,158,11,.12);color:#fbbf24;}
+.pill-pipeline{background:rgba(34,211,165,.1);color:var(--green);}
+.pill-negociacion{background:rgba(244,114,182,.1);color:#f472b6;}
+.pill-comunicacion{background:rgba(251,191,36,.1);color:#fbbf24;}
+.pill-mentalidad{background:rgba(248,113,113,.1);color:#f87171;}
+
+/* número */
+.q-num{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:1px;margin-bottom:10px;}
+
+/* contexto */
+.q-ctx{
+  background:rgba(255,255,255,.03);border-left:3px solid rgba(99,102,241,.4);
+  border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:20px;
+  font-size:13px;color:var(--muted);line-height:1.6;font-style:italic;
+}
+/* pregunta */
+.q-texto{
+  font-size:20px;font-weight:700;line-height:1.4;letter-spacing:-.3px;
+  color:var(--white);margin-bottom:28px;
+}
+/* opciones */
+.q-opciones{display:flex;flex-direction:column;gap:8px;}
+.opcion{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:14px 16px;border-radius:10px;cursor:pointer;
+  background:var(--s2);border:1px solid var(--border);
+  color:var(--muted);font-size:13px;line-height:1.5;
+  transition:all .15s;text-align:left;width:100%;
+}
+.opcion:hover{background:var(--s3);border-color:var(--border2);color:var(--white);}
+.opcion.selected{background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.5);color:var(--white);}
+.opcion.correct{background:rgba(34,211,165,.08);border-color:rgba(34,211,165,.4);color:rgba(34,211,165,.9);}
+.opcion.wrong{background:rgba(244,63,94,.07);border-color:rgba(244,63,94,.3);color:rgba(244,63,94,.8);}
+.opcion-idx{
+  width:24px;height:24px;border-radius:6px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;font-family:'DM Mono',monospace;
+  background:rgba(255,255,255,.05);color:var(--muted);
+  transition:all .15s;
+}
+.opcion.selected .opcion-idx{background:var(--accent);color:#fff;}
+.opcion.correct .opcion-idx{background:var(--green);color:#000;}
+.opcion.wrong .opcion-idx{background:var(--red);color:#fff;}
+
+/* nav */
+.q-nav{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:32px;padding-top:24px;border-top:1px solid var(--border);
+}
+.nav-prev{
+  background:none;color:var(--muted);font-size:12px;font-weight:600;
+  cursor:pointer;padding:10px 0;transition:color .15s;
+}
+.nav-prev:hover{color:var(--white);}
+.nav-prev:disabled{opacity:.25;cursor:default;}
+.nav-next{
+  padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;
+  background:linear-gradient(135deg,var(--accent),#4f46e5);color:#fff;
+  transition:all .15s;box-shadow:0 4px 14px rgba(99,102,241,.25);
+}
+.nav-next:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,.35);}
+.nav-next.warn-finish{
+  background:rgba(245,158,11,.15);color:var(--amber);
+  border:1px solid rgba(245,158,11,.3);box-shadow:none;
+}
+
+/* ─── CIERRE ─────────────────────────────────────────── */
+#screen-cierre{align-items:center;justify-content:center;padding:80px 20px;}
+.cierre-wrap{max-width:440px;text-align:center;}
+.cierre-check{
+  width:72px;height:72px;border-radius:50%;margin:0 auto 28px;
+  background:linear-gradient(135deg,var(--green),#059669);
+  display:flex;align-items:center;justify-content:center;font-size:28px;
+  box-shadow:0 16px 40px rgba(34,211,165,.25);
+  animation:popIn .6s cubic-bezier(.16,1,.3,1) both;
+}
+.cierre-h{font-size:30px;font-weight:800;letter-spacing:-.5px;margin-bottom:12px;
+  animation:slideUp .5s .12s cubic-bezier(.16,1,.3,1) both;}
+.cierre-sub{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:32px;
+  animation:slideUp .5s .2s cubic-bezier(.16,1,.3,1) both;}
+.cierre-ref{
+  display:inline-block;background:var(--s2);border:1px solid var(--border2);
+  border-radius:8px;padding:12px 20px;
+  font-family:'DM Mono',monospace;font-size:11px;
+  color:var(--muted);letter-spacing:2px;
+  animation:slideUp .5s .28s cubic-bezier(.16,1,.3,1) both;
+}
+.cierre-ref span{color:var(--white);font-weight:600;}
+
+/* ─── RESULTADO (candidato) ──────────────────────────── */
+#screen-resultado{padding:80px 20px 48px;align-items:center;}
+.res-wrap{width:100%;max-width:600px;}
+.res-score-hero{
+  text-align:center;padding:40px 24px;
+  background:var(--s1);border:1px solid var(--border);border-radius:16px;
+  margin-bottom:24px;position:relative;overflow:hidden;
+}
+.res-score-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% -20%,rgba(99,102,241,.08),transparent);
+}
+.res-score-big{
+  font-size:80px;font-weight:900;letter-spacing:-4px;line-height:1;
+  margin-bottom:8px;position:relative;
+}
+.res-score-lbl{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.res-nivel-badge{
+  display:inline-block;margin-top:16px;padding:6px 18px;border-radius:20px;
+  font-size:11px;font-weight:700;letter-spacing:1px;
+}
+.res-areas{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
+.res-area-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;
+}
+.res-area-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.res-area-name{font-size:12px;font-weight:600;color:var(--muted);}
+.res-area-pct{font-size:14px;font-weight:800;font-family:'DM Mono',monospace;}
+.res-area-bar{height:4px;background:var(--border2);border-radius:4px;overflow:hidden;}
+.res-area-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1);}
+.res-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.res-btn{
+  padding:12px 20px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;
+}
+.res-btn.primary{background:linear-gradient(135deg,var(--accent),#4f46e5);color:#fff;border:none;box-shadow:0 4px 14px rgba(99,102,241,.25);}
+.res-btn.secondary{background:var(--s2);border:1px solid var(--border2);color:var(--muted);}
+.res-btn:hover{transform:translateY(-1px);}
+
+/* ─── ADMIN LOGIN ────────────────────────────────────── */
+#screen-admin-login{align-items:center;justify-content:center;padding:100px 20px;}
+.adm-login-wrap{max-width:360px;width:100%;}
+
+/* ─── ADMIN ──────────────────────────────────────────── */
+#screen-admin{align-items:stretch;}
+.admin-nav{
+  background:rgba(12,12,15,.9);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);padding:14px 28px;
+  display:flex;align-items:center;gap:12px;
+  position:sticky;top:0;z-index:50;
+}
+.admin-nav-brand{font-size:13px;font-weight:700;color:var(--accent2);}
+.admin-nav-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.admin-nav-stat{font-size:11px;color:var(--muted);}
+.adm-exit{
+  font-size:11px;font-weight:600;padding:6px 14px;border-radius:6px;cursor:pointer;
+  background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);color:rgba(244,63,94,.7);
+  transition:all .15s;
+}
+.adm-exit:hover{background:rgba(244,63,94,.15);color:var(--red);}
+.admin-body{max-width:1100px;width:100%;margin:0 auto;padding:32px 28px;}
+.gen-form{
+  background:var(--s1);border:1px solid var(--border);border-radius:12px;
+  padding:20px 24px;margin-bottom:32px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;
+}
+.gen-form-field{flex:1;min-width:160px;}
+.gen-form-label{display:block;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.gen-form-input{
+  width:100%;background:var(--s2);border:1px solid var(--border2);border-radius:8px;
+  color:var(--white);font-size:13px;padding:10px 14px;
+  transition:border-color .15s;font-family:inherit;
+}
+.gen-form-input:focus{border-color:var(--accent);}
+.gen-form-input::placeholder{color:rgba(248,248,255,.2);}
+.gen-submit{
+  padding:10px 20px;border-radius:8px;
+  background:linear-gradient(135deg,var(--accent),#4f46e5);color:#fff;
+  font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  box-shadow:0 4px 14px rgba(99,102,241,.25);transition:all .15s;
+}
+.gen-submit:hover{transform:translateY(-1px);}
+.admin-section-title{
+  font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:16px;
+}
+.codes-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:10px;margin-bottom:36px;
+}
+.code-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:12px;
+  padding:20px;transition:border-color .15s;
+}
+.code-card:hover{border-color:var(--border2);}
+.cc-nombre{font-size:15px;font-weight:700;margin-bottom:2px;}
+.cc-empresa{font-size:11px;color:var(--muted);margin-bottom:16px;}
+.cc-code{
+  font-family:'DM Mono',monospace;font-size:26px;font-weight:700;
+  letter-spacing:6px;color:var(--white);margin-bottom:12px;
+}
+.cc-status{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:600;letter-spacing:.5px;}
+.cc-dot{width:6px;height:6px;border-radius:50%;}
+.cc-dot.p{background:var(--amber);}
+.cc-dot.c{background:var(--green);}
+.cc-status.p{color:rgba(245,158,11,.7);}
+.cc-status.c{color:rgba(34,211,165,.7);}
+.cc-fecha{font-size:10px;color:rgba(248,248,255,.15);margin-top:4px;}
+.cc-actions{display:flex;gap:7px;margin-top:14px;flex-wrap:wrap;}
+.cc-btn{
+  font-size:10px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer;
+  background:var(--s3);border:1px solid var(--border2);color:var(--muted);transition:all .15s;
+}
+.cc-btn:hover{color:var(--white);border-color:rgba(255,255,255,.2);}
+.cc-btn.del{color:rgba(244,63,94,.5);border-color:rgba(244,63,94,.15);}
+.cc-btn.del:hover{color:var(--red);border-color:rgba(244,63,94,.4);}
+.cc-btn.unlock{color:var(--accent2);border-color:rgba(99,102,241,.25);background:rgba(99,102,241,.06);}
+.cc-btn.unlock:hover{background:rgba(99,102,241,.15);border-color:var(--accent2);}
+.res-table-wrap{background:var(--s1);border:1px solid var(--border);border-radius:12px;overflow:auto;margin-bottom:40px;}
+.res-table{width:100%;border-collapse:collapse;min-width:700px;}
+.res-table th{
+  font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--border);
+  text-align:left;background:var(--s2);
+}
+.res-table td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);}
+.res-table tr:last-child td{border-bottom:none;}
+.res-table tr:hover td{background:rgba(255,255,255,.02);}
+.score-chip{
+  font-size:11px;font-weight:700;font-family:'DM Mono',monospace;
+  padding:3px 8px;border-radius:5px;border:1px solid;
+}
+.s-high{color:rgba(34,211,165,.9);border-color:rgba(34,211,165,.25);background:rgba(34,211,165,.07);}
+.s-mid{color:rgba(245,158,11,.9);border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.07);}
+.s-low{color:rgba(244,63,94,.9);border-color:rgba(244,63,94,.25);background:rgba(244,63,94,.07);}
+.empty-state{
+  padding:48px;text-align:center;font-size:12px;color:rgba(248,248,255,.2);
+  font-weight:500;letter-spacing:.5px;
+}
+
+/* ─── MODAL BASE ─────────────────────────────────────── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(8,8,12,.88);backdrop-filter:blur(12px);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.modal-box{
+  background:var(--s1);border:1px solid var(--border2);border-radius:16px;
+  width:100%;max-width:400px;padding:32px;
+  animation:popIn .25s cubic-bezier(.16,1,.3,1);
+}
+.modal-title{font-size:20px;font-weight:800;letter-spacing:-.3px;margin-bottom:8px;}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6;}
+.modal-actions{display:flex;gap:10px;}
+
+/* ─── TOAST ──────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--s2);border:1px solid var(--border2);border-radius:10px;
+  padding:11px 18px;font-size:12px;font-weight:600;color:var(--white);
+  z-index:300;pointer-events:none;white-space:nowrap;
+  animation:toastIn .2s cubic-bezier(.16,1,.3,1),toastOut .2s 2.3s forwards;
+}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,8px);}to{opacity:1;transform:translate(-50%,0);}}
+@keyframes toastOut{to{opacity:0;transform:translate(-50%,8px);}}
+
+/* ─── PWA / MOBILE ───────────────────────────────────── */
+@supports(padding:env(safe-area-inset-top)){
+  .brand-top,.admin-nav{padding-top:max(14px,env(safe-area-inset-top));}
+  .diag-header{padding-top:max(12px,env(safe-area-inset-top));}
+}
+.opcion{min-height:50px;}
+.acc-btn,.bv-start,.nav-next{min-height:48px;}
+input[type="text"],input[type="password"]{font-size:16px !important;}
+
+/* ─── RESPONSIVE ─────────────────────────────────────── */
+@media(max-width:600px){
+  .acc-h1{font-size:28px;}
+  .bv-nombre{font-size:24px;}
+  .bv-spec-val{font-size:22px;}
+  .diag-header{padding:10px 14px;}
+  .diag-dots{display:none;}
+  .diag-body{padding:28px 14px 80px;}
+  .q-texto{font-size:17px;}
+  .admin-body{padding:20px 16px;}
+  .gen-form{flex-direction:column;}
+  .res-score-big{font-size:60px;}
+  .codes-grid{grid-template-columns:1fr;}
+  .brand-top{padding:12px 16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- MARCA FIJA -->
+<div class="brand-top">
+  <div class="brand-logo">M</div>
+  <div class="brand-name">MetoGroup</div>
+  <div class="brand-badge">BPC · 2026</div>
+</div>
+
+<!-- ════════ ACCESO ════════ -->
+<div class="screen active" id="screen-acceso">
+  <div class="acc-wrap">
+    <div class="acc-eyebrow">Diagnóstico de Competencias</div>
+    <h1 class="acc-h1">Conocé tu<br><span>perfil comercial.</span></h1>
+    <p class="acc-sub">Una evaluación diseñada para medir tus competencias reales de venta. Sin trampa, sin filtro — solo la realidad.</p>
+    <div class="field">
+      <label class="field-lbl">Nombre completo</label>
+      <input class="field-inp" id="acc-nombre" type="text" placeholder="Tu nombre y apellido" autocomplete="off">
+    </div>
+    <div class="field">
+      <label class="field-lbl">Código de acceso</label>
+      <input class="field-inp code" id="acc-codigo" type="text" placeholder="······" maxlength="8" autocomplete="off" oninput="this.value=this.value.toUpperCase()">
+    </div>
+    <button class="acc-btn" onclick="doAcceso()">Ingresar →</button>
+    <div class="acc-err" id="acc-err"></div>
+    <div class="acc-footer">
+      MetoGroup · Auditoría BPC:2026<br>
+      <span class="admin-link" onclick="showAdminLogin()">acceso auditor</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ BIENVENIDA ════════ -->
+<div class="screen" id="screen-bienvenida">
+  <div class="bv-wrap">
+    <div class="bv-avatar" id="bv-avatar">?</div>
+    <h2 class="bv-nombre" id="bv-nombre">—</h2>
+    <div class="bv-empresa" id="bv-empresa">—</div>
+    <div class="bv-specs">
+      <div class="bv-spec"><span class="bv-spec-val">25</span><span class="bv-spec-lbl">Situaciones</span></div>
+      <div class="bv-spec"><span class="bv-spec-val">6</span><span class="bv-spec-lbl">Dimensiones</span></div>
+      <div class="bv-spec"><span class="bv-spec-val">45'</span><span class="bv-spec-lbl">Máximo</span></div>
+    </div>
+    <div class="bv-nota"><strong>Cómo funciona:</strong> Vas a encontrar situaciones reales de venta. Elegí la opción que refleje lo que harías vos — no lo que creés que es "correcto". No hay respuestas ideales, hay respuestas honestas.</div>
+    <button class="bv-start" onclick="iniciarDiag()">Arrancar diagnóstico →</button>
+  </div>
+</div>
+
+<!-- ════════ DIAGNÓSTICO ════════ -->
+<div class="screen" id="screen-diag">
+  <div class="diag-header">
+    <div class="diag-dots" id="diag-dots"></div>
+    <div class="diag-prog-wrap">
+      <div class="diag-prog-bar-outer"><div class="diag-prog-fill" id="diag-prog-fill" style="width:0"></div></div>
+      <div class="diag-prog-txt" id="diag-prog-text">1 / 25</div>
+    </div>
+    <div class="diag-timer" id="diag-timer">45:00</div>
+  </div>
+  <div class="diag-body" id="diag-body"></div>
+</div>
+
+<!-- ════════ CIERRE (sin score) ════════ -->
+<div class="screen" id="screen-cierre">
+  <div class="cierre-wrap">
+    <div class="cierre-check">✓</div>
+    <h2 class="cierre-h">¡Listo!</h2>
+    <p class="cierre-sub">Tus respuestas quedaron registradas y serán analizadas por el equipo de MetoGroup. Tu perfil comercial estará disponible junto con el informe de auditoría completo.</p>
+    <div class="cierre-ref">Referencia · <span id="cierre-ref-code">—</span></div>
+  </div>
+</div>
+
+<!-- ════════ RESULTADO DESBLOQUEADO ════════ -->
+<div class="screen" id="screen-resultado">
+  <div class="res-wrap">
+    <div class="res-header">
+      <div class="res-titulo">Informe de Perfil Comercial · BPC:2026</div>
+      <div class="res-nombre" id="res-nombre">—</div>
+      <div class="res-empresa" id="res-empresa">—</div>
+    </div>
+    <div class="res-score-block">
+      <div class="res-score-num" id="res-score-num">—</div>
+      <div class="res-score-meta">
+        <span class="res-score-pct" id="res-score-pct">de 25 correctas</span>
+        <div class="res-nivel" id="res-nivel">—</div>
+      </div>
+    </div>
+    <div class="res-areas" id="res-areas"></div>
+    <div class="res-actions">
+      <button class="res-btn primary" onclick="window.print()">Imprimir informe</button>
+      <button class="res-btn secondary" onclick="showScreen('acceso')">← Volver</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ ADMIN LOGIN ════════ -->
+<div class="screen" id="screen-admin-login">
+  <div class="adm-login-wrap">
+    <div class="acc-eyebrow">Acceso restringido</div>
+    <h2 class="acc-h1" style="margin-bottom:8px">Panel <span>Auditor</span></h2>
+    <p class="acc-sub">Gestión de códigos y visualización de resultados internos.</p>
+    <div class="field">
+      <label class="field-lbl">Contraseña</label>
+      <input class="field-inp" id="adm-pass" type="password" placeholder="••••••••">
+    </div>
+    <button class="acc-btn" style="margin-top:8px" onclick="doAdminLogin()">Acceder →</button>
+    <div class="acc-err" id="adm-err"></div>
+    <div style="margin-top:20px;text-align:center">
+      <span style="font-size:11px;color:rgba(248,248,255,.2);cursor:pointer" onclick="showScreen('acceso')">← volver</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ ADMIN ════════ -->
+<div class="screen" id="screen-admin">
+  <div class="admin-nav">
+    <div class="admin-nav-brand">BPC:2026 · Auditor</div>
+    <div class="admin-nav-right">
+      <span class="admin-nav-stat" id="adm-stat">—</span>
+      <button class="adm-exit" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+  <div class="admin-body">
+    <!-- Generar código -->
+    <div class="gen-form">
+      <div class="gen-form-field">
+        <label class="gen-form-label">Nombre del vendedor</label>
+        <input class="gen-form-input" id="adm-nombre" placeholder="Nombre completo">
+      </div>
+      <div class="gen-form-field">
+        <label class="gen-form-label">Empresa auditada</label>
+        <input class="gen-form-input" id="adm-empresa" placeholder="Nombre de la empresa">
+      </div>
+      <button class="gen-submit" onclick="generarCodigo()">Generar código →</button>
+    </div>
+    <!-- Códigos activos -->
+    <div class="admin-section-title">Códigos de acceso</div>
+    <div class="codes-grid" id="codes-grid"></div>
+    <!-- Resultados -->
+    <div class="admin-section-title">Resultados registrados</div>
+    <div class="res-table-wrap">
+      <table class="res-table">
+        <thead>
+          <tr>
+            <th>Nombre</th><th>Empresa</th><th>Score</th><th>Nivel</th>
+            <th>Cierre</th><th>Objeciones</th><th>Ética</th>
+            <th>Negoc.</th><th>Comunic.</th><th>Redes</th><th>Fecha</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="res-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// BANCO DE 25 PREGUNTAS — 6 DIMENSIONES
+// ═══════════════════════════════════════════════════════
+const ITEMS = [
+
+  // ══ CIERRE — 6 situaciones con trampa ══════════════════
+
+  {id:1,area:'cierre',cat:'Momento de cierre',
+   ctx:'Estás en la tercera reunión con un prospecto. Explicaste todo, respondiste cada pregunta, la propuesta está sobre la mesa. El cliente dice: "Muy bien, te llamamos la semana que viene."',
+   q:'¿Qué hacés?',
+   ops:[
+     'Le agradecés y esperás su llamado — no querés presionar',
+     'Le decís: "Con gusto. ¿El lunes o el miércoles te queda mejor para hablar?"',
+     'Le preguntás si hay algo que no quedó claro antes de que se vaya',
+     'Le enviás un resumen por mail con toda la propuesta para que lo repase'
+   ],
+   ok:1,
+   exp:'Un vendedor real nunca deja la iniciativa en manos del cliente. "Te llamamos" en el 80% de los casos significa que no llaman. La respuesta correcta toma el control del próximo paso con una pregunta de alternativa cerrada — día A o día B. Esperar su llamado es la muerte del proceso.'},
+
+  {id:2,area:'cierre',cat:'Señal de compra',
+   ctx:'Estás en una reunión y el cliente pregunta: "¿Cuánto tardarían en implementarlo si arrancamos?"',
+   q:'¿Qué significa esa pregunta y cómo respondés?',
+   ops:[
+     'Significa que quiere más información técnica — respondés con todos los detalles del proceso',
+     'Es una señal de compra — el cliente ya se está viendo adentro. Respondés el plazo y pasás directamente al siguiente paso: "¿Empezamos la semana que viene o el lunes 15?"',
+     'Significa que todavía tiene dudas — aprovechás para reforzar los beneficios',
+     'Respondés el plazo y esperás su reacción antes de hacer cualquier movimiento'
+   ],
+   ok:1,
+   exp:'Preguntas de implementación, logística o equipo asignado son señales de compra puras. El cliente ya decidió mentalmente y está pensando en el "cómo", no en el "si". Un vendedor entrenado lo detecta y cierra en ese instante, no sigue vendiendo lo que ya está vendido.'},
+
+  {id:3,area:'cierre',cat:'Silencio como herramienta',
+   q:'Hiciste tu propuesta, pusiste el precio, y guardás silencio. El cliente no dice nada por 15 segundos. ¿Qué hacés?',
+   ops:[
+     'Rompés el silencio para explicar mejor el precio — se siente incómodo',
+     'Bajás el precio preventivamente para evitar el rechazo',
+     'Mantenés el silencio — el primero que habla, pierde',
+     'Preguntás: "¿Qué te parece?" para romper la tensión'
+   ],
+   ok:2,
+   exp:'El silencio después de presentar el precio es una de las herramientas más poderosas en ventas. El vendedor que lo rompe casi siempre lo hace para justificar o bajar el precio — lo cual destruye su posición. El que aguanta el silencio, gana. El primero que habla después de nombrar el precio, negocia contra sí mismo.'},
+
+  {id:4,area:'cierre',cat:'Urgencia real',
+   ctx:'El cliente dice: "Me interesa, pero lo dejo para después del verano." Es febrero.',
+   q:'¿Qué hacés?',
+   ops:[
+     'Anotás el lead para llamarlo en marzo y cerrás la conversación amablemente',
+     'Le preguntás: "¿Qué cambia después del verano que no pueda cambiar hoy?" y buscás el costo de esperar',
+     'Le ofrecés un descuento especial para que decida ahora',
+     'Aceptás el timing — respetar los tiempos del cliente es fundamental'
+   ],
+   ok:1,
+   exp:'"Después del verano" sin una razón concreta es una objeción de postergación, no de timing real. Un vendedor profesional pregunta qué cambia en ese plazo — si no hay respuesta sólida, la objeción no es real. Calcular el costo de esperar (oportunidades perdidas, precio que puede subir) instala urgencia sin descuentos.'},
+
+  {id:5,area:'cierre',cat:'Seguimiento post-reunión',
+   ctx:'Tuviste una excelente primera reunión. El cliente quedó muy interesado. Dijiste que le mandabas la propuesta al día siguiente.',
+   q:'¿Cada cuánto hacés seguimiento si no responde?',
+   ops:[
+     'Esperás — si está interesado, él va a escribir. No querés ser molesto',
+     'Mandás un mail al día siguiente con la propuesta y si no responde en una semana, lo volvés a contactar. Después cada dos semanas hasta tener una respuesta definitiva',
+     'Mandás la propuesta, llamás a los dos días, volvés a llamar a los cinco días. Si no responde, lo das por perdido — hay que saber cuándo soltar',
+     'Mandás la propuesta y al día siguiente llamás para confirmar que la recibió, preguntás qué le pareció y acordás un próximo paso concreto'
+   ],
+   ok:3,
+   exp:'El seguimiento inmediato y estructurado es lo que diferencia a los vendedores de élite. Mandar la propuesta y llamar al día siguiente para confirmar recepción y acordar el próximo paso es el estándar profesional. Esperar que el cliente llame es la estrategia del amateur. Soltar después de no respuesta sin intentar activamente es rendirse demasiado rápido.'},
+
+  {id:6,area:'cierre',cat:'Cierre con decisor ausente',
+   ctx:'Después de tres reuniones, tu contacto dice: "Todo perfecto, pero tengo que consultarlo con mi socio antes de cerrar."',
+   q:'¿Cómo manejás esto?',
+   ops:[
+     'Esperás que hable con el socio y te llame cuando tenga respuesta',
+     'Pedís que organice una reunión con el socio presente — querés estar cuando se tome la decisión',
+     'Le preguntás qué le vas a decir al socio y lo preparás para que haga la venta internamente por vos',
+     'Mandás material adicional para que lo comparta con el socio'
+   ],
+   ok:1,
+   exp:'Cuando aparece un decisor oculto al final del proceso, la respuesta correcta es pedir reunión con él — no esperar, no mandar material, no preparar a tu contacto para que venda por vos (él no sabe hacerlo). Necesitás estar en la sala cuando se decide. Todo lo demás te saca del control del proceso.'},
+
+  // ══ OBJECIONES — 4 situaciones ══════════════════════
+
+  {id:7,area:'objeciones',cat:'Objeción precio — trampa',
+   ctx:'El cliente dice: "Es muy caro."',
+   q:'¿Cuál es tu respuesta inmediata?',
+   ops:[
+     '"Entiendo. ¿Cuánto tenías pensado invertir?"',
+     '"¿Caro comparado con qué?"',
+     '"Puedo hacerte un precio especial si cerramos hoy."',
+     '"Nuestro precio refleja la calidad del servicio que ofrecemos."'
+   ],
+   ok:1,
+   exp:'"¿Caro comparado con qué?" es la única respuesta que pone la objeción en perspectiva sin ceder terreno. "¿Cuánto tenías pensado?" le da el control de la negociación al cliente. Ofrecer descuento inmediato destruye el precio sin negociación previa. Defender la calidad sin entender la objeción real es un monólogo que no resuelve nada.'},
+
+  {id:8,area:'objeciones',cat:'Mandame info',
+   ctx:'Llamada en frío. El prospecto dice: "Mandame info por mail y lo veo."',
+   q:'¿Qué hacés exactamente?',
+   ops:[
+     'Mandás el deck completo con toda la información disponible',
+     'Decís: "Perfecto, te mando algo puntual. ¿El jueves a las 11 te llamo para ver qué te pareció?" — y acordás la llamada antes de colgar',
+     'Le decís que preferís explicarlo en persona y pedís una reunión',
+     'Anotás el mail, mandás la info y esperás que él dé el siguiente paso'
+   ],
+   ok:1,
+   exp:'"Mandame info" es la forma cortés de terminar la llamada. El vendedor profesional acepta, manda algo corto y concreto, y ANTES de colgar compromete una fecha y hora de seguimiento. Sin esa fecha acordada en la misma llamada, el mail cae en el vacío. La regla es: nunca terminar una conversación sin el próximo paso comprometido.'},
+
+  {id:9,area:'objeciones',cat:'Ya tenemos proveedor',
+   ctx:'Prospecto: "Ya trabajamos con alguien hace dos años y estamos contentos."',
+   q:'¿Qué preguntás?',
+   ops:[
+     '"¿Qué resultados concretos les está dando ese proveedor?"',
+     '"Entiendo. Si en algún momento cambian de proveedor, me avisás."',
+     '"Igual me gustaría contarte qué hacemos diferente, ¿tenés cinco minutos?"',
+     '"¿Cuánto están pagando actualmente?"'
+   ],
+   ok:0,
+   exp:'Preguntar por resultados concretos es la única respuesta que abre la conversación real. "Dos años y contentos" sin números es una declaración vacía. Si los resultados son buenos, no hay gap — ese prospecto no es tuyo hoy. Si los resultados son mediocres o no los miden, acabás de encontrar la entrada. Las otras opciones o se rinden o cambian de tema sin información.'},
+
+  {id:10,area:'objeciones',cat:'No tenemos presupuesto',
+   ctx:'Un prospecto grande dice: "Ahora no tenemos presupuesto para esto."',
+   q:'¿Cómo determinás si es real o una excusa?',
+   ops:[
+     'Lo aceptás como real — no querés presionar una situación financiera delicada',
+     'Preguntás: "¿Cuándo se define el próximo presupuesto y quién participa de esa decisión?"',
+     'Ofrecés pagar en cuotas o diferir el inicio para adaptarte a su situación',
+     'Preguntás: "Si el presupuesto no fuera una limitación, ¿avanzarías con esto?"'
+   ],
+   ok:3,
+   exp:'La pregunta "¿si el presupuesto no fuera una limitación avanzarías?" es la mejor herramienta para separar objeción real de excusa. Si dice sí, el presupuesto es el único obstáculo y trabajás sobre eso. Si duda o cambia el tema, hay otra objeción detrás. Preguntar por el timing presupuestario es bueno pero secundario — primero hay que saber si el interés es genuino.'},
+
+  // ══ SEGUIMIENTO Y PIPELINE — 4 situaciones ══════════
+
+  {id:11,area:'pipeline',cat:'Gestión del pipeline',
+   q:'Tenés 40 leads activos en tu pipeline. ¿Cómo priorizás a quién llamar hoy?',
+   ops:[
+     'Empezás por los que hace más tiempo no contactaste — hay que ser equitativo',
+     'Priorizás los que tienen mayor probabilidad de cierre en los próximos 7 días y los que tienen reunión pendiente de confirmar',
+     'Llamás a todos en orden alfabético para no olvidarte de ninguno',
+     'Empezás por los que tienen mayor ticket — maximizás el tiempo en los más rentables'
+   ],
+   ok:1,
+   exp:'Un pipeline se gestiona por urgencia de cierre y compromisos pendientes, no por ticket ni por orden. Los leads con reunión a confirmar y los que están en etapa final son los que mueven el número esta semana. Ignorarlos para llamar a leads fríos es mala gestión del tiempo comercial.'},
+
+  {id:12,area:'pipeline',cat:'Lead sin respuesta',
+   ctx:'Un lead muy caliente dejó de responder hace 10 días. Contestó dos veces antes, parecía muy interesado.',
+   q:'¿Qué hacés?',
+   ops:[
+     'Lo das por perdido — si estuviera interesado hubiera respondido',
+     'Mandás un último mail largo explicando todo el valor nuevamente',
+     'Mandás un mail corto con un hook diferente: "¿Cambió algo desde la última vez que hablamos?"',
+     'Esperás otros 10 días más antes de insistir — no querés ser invasivo'
+   ],
+   ok:2,
+   exp:'Un lead que corta el silencio con algo inesperado — no otra explicación del servicio — tiene muchas más chances de respuesta. "¿Cambió algo?" invita a una conversación honesta sobre lo que pasó (surgió otro proveedor, cambió el presupuesto, hay un problema interno). Darlo por perdido sin este intento es dejar dinero sobre la mesa.'},
+
+  {id:13,area:'pipeline',cat:'Cadencia de seguimiento',
+   q:'¿Cuál es la cadencia correcta de seguimiento para un lead que mostró interés pero no cerró en la primera propuesta?',
+   ops:[
+     'Llamada al día siguiente, mail a los 3 días, llamada a los 7 días, mail a los 15 días — y luego cada 30 días hasta respuesta definitiva',
+     'Una vez por semana durante un mes, después lo movés a lista fría',
+     'Esperás que el cliente tome la iniciativa — el seguimiento agresivo molesta',
+     'Llamás todos los días hasta obtener respuesta'
+   ],
+   ok:0,
+   exp:'La cadencia estructurada — con intervalos crecientes y alternando canales (llamada/mail) — es la más efectiva. Llamar todos los días molesta y destruye la relación. Esperar que el cliente llame es no hacer el trabajo. La clave es aumentar el intervalo progresivamente mientras se mantiene el contacto activo.'},
+
+  {id:14,area:'pipeline',cat:'Calificación de leads',
+   ctx:'Tenés una reunión agendada con alguien que respondió un formulario de contacto en la web. No sabés nada de él.',
+   q:'¿Qué hacés antes de la reunión?',
+   ops:[
+     'Vas directo a la reunión sin preparación — preferís escucharlo sin preconceptos',
+     'Investigás la empresa (facturación, rubro, tamaño, presencia digital) y preparás preguntas específicas para calificar: presupuesto, autoridad, necesidad y timing',
+     'Mandás un cuestionario previo para que complete antes de la reunión',
+     'Preguntás a tu supervisor si conoce la empresa'
+   ],
+   ok:1,
+   exp:'Llegar a una reunión sin investigar es amateur. Conocer la empresa permite hacer preguntas inteligentes y detectar en los primeros minutos si es un lead calificado (BANT: Budget, Authority, Need, Timing). Un vendedor profesional entra a cada reunión sabiendo más del prospecto que él mismo espera.'},
+
+  // ══ NEGOCIACIÓN — 4 situaciones ══════════════════════
+
+  {id:15,area:'negociacion',cat:'Primer precio — trampa',
+   q:'El cliente pregunta: "¿Cuánto cuesta?" en la primera reunión, cuando todavía no terminaste de entender su problema.',
+   q:'¿Qué hacés?',
+   ops:[
+     'Dás el precio lista sin contexto — la transparencia genera confianza',
+     'Decís que el precio varía y le preguntás qué presupuesto tiene disponible',
+     'Decís: "Depende de lo que necesitás. Déjame hacerte dos o tres preguntas para darte un número que tenga sentido para tu caso."',
+     'Prometés mandarle un presupuesto detallado por mail durante la semana'
+   ],
+   ok:2,
+   exp:'Dar precio antes de entender el problema es el error más caro en ventas. Preguntar el presupuesto del cliente le da el control de la negociación. Responder "depende" y hacer preguntas calificadoras mantiene el marco correcto: primero entendemos el problema, después hablamos de inversión. El precio nunca debería ser el primero en hablar.'},
+
+  {id:16,area:'negociacion',cat:'Descuento bajo presión',
+   ctx:'El cliente dice: "Si me hacés un 20% de descuento, cierro ahora mismo."',
+   q:'¿Cómo respondés?',
+   ops:[
+     'Aceptás el 20% para no perder la venta — una venta con menos margen es mejor que ninguna venta',
+     'Rechazás directamente — si empezás cediendo el 20%, el siguiente pedido va a ser mayor',
+     'Preguntás: "¿Qué recibe nuestra empresa a cambio de ese 20%?" — volumen mayor, pago contado, referidos, plazo más largo',
+     'Ofrecés la mitad: "El máximo que puedo hacer es 10%"'
+   ],
+   ok:2,
+   exp:'El descuento sin intercambio destruye el valor y entrena al cliente para negociar así siempre. El descuento con intercambio — pago contado, volumen, referidos — es una negociación real. Ofrecer la mitad sin preguntar qué obtenés a cambio es ceder margen sin información. Rechazarlo directo cierra la conversación innecesariamente.'},
+
+  {id:17,area:'negociacion',cat:'Ancla de precio',
+   q:'En una negociación, ¿quién debería nombrar el precio primero?',
+   ops:[
+     'El cliente — así sabés hasta dónde llegar',
+     'El vendedor — quien pone el ancla inicial tiene ventaja en la negociación',
+     'Ninguno — hay que construir valor antes de hablar de números',
+     'No importa quién lo diga primero'
+   ],
+   ok:1,
+   exp:'El efecto ancla es uno de los fenómenos más estudiados en negociación. Quien pone el primer número ancla la conversación en torno a ese valor. Si el vendedor ancla alto, la negociación baja desde ahí. Si el cliente ancla bajo primero, el vendedor negocia hacia arriba desde una posición desfavorable. El vendedor debe nombrar el precio primero, con convicción.'},
+
+  {id:18,area:'negociacion',cat:'Negociación con la empresa — trampa',
+   ctx:'Tu empresa no te autoriza a hacer descuentos. El cliente insiste con que necesita un precio menor.',
+   q:'¿Qué hacés?',
+   ops:[
+     'Explicás que no tenés autorización y que no podés hacer nada',
+     'Ofrecés el descuento de todas formas y después resolvés internamente',
+     'Explorás qué podés quitar del servicio para ajustar el precio sin tocar el margen — o qué podés agregar sin costo para justificar el precio actual',
+     'Le pedís al cliente que hable directamente con tu supervisor'
+   ],
+   ok:2,
+   exp:'Cuando el precio no puede moverse, el valor sí puede. Reducir el scope para bajar el precio mantiene el margen. Agregar algo de bajo costo para justificar el precio actual también funciona. Decir "no puedo hacer nada" es rendirse sin intentarlo. Ofrecer el descuento sin autorización es un problema de integridad y de proceso.'},
+
+  // ══ COMUNICACIÓN Y LECTURA — 4 situaciones ══════════
+
+  {id:19,area:'comunicacion',cat:'Diagnóstico del prospecto',
+   ctx:'Primera reunión. El prospecto habla durante 20 minutos sin parar sobre sus problemas, su empresa, su situación.',
+   q:'¿Qué hacés durante esos 20 minutos?',
+   ops:[
+     'Escuchás educadamente y esperás tu turno para presentar la solución',
+     'Interrumpís para ir al punto — el tiempo es valioso',
+     'Tomás notas, identificás los tres problemas principales que mencionó, y cuando termina de hablar, los reflejás: "Si entiendo bien, los tres puntos más importantes son X, Y y Z. ¿Es así?"',
+     'Hacés preguntas cerradas para confirmar que entendiste bien cada punto'
+   ],
+   ok:2,
+   exp:'El vendedor que escucha, organiza y refleja demuestra que escuchó de verdad — y eso genera confianza inmediata. Reflejar los tres problemas principales antes de proponer cualquier solución es la base del diagnóstico comercial. Esperar tu turno para hablar es pasivo. Interrumpir es un error de relación. Las preguntas cerradas cierran la conversación en lugar de abrirla.'},
+
+  {id:20,area:'comunicacion',cat:'Lenguaje de valor',
+   q:'El cliente pregunta: "¿Por qué su servicio es más caro que el de la competencia?" ¿Cuál es la mejor respuesta?',
+   ops:[
+     '"Porque tenemos más experiencia y mejor calidad."',
+     '"¿Qué incluye la propuesta de la competencia exactamente? Necesito comparar bien antes de responder."',
+     '"El precio refleja los resultados que generamos — nuestros clientes recuperan la inversión en X meses."',
+     '"No somos más caros, somos diferentes."'
+   ],
+   ok:1,
+   exp:'Antes de defender el precio hay que entender contra qué se compara. Si la competencia ofrece algo diferente, no hay comparación válida. Si ofrecen lo mismo, hay que hablar de diferenciadores concretos. Responder sin información es disparar en la oscuridad. "Más experiencia y calidad" son palabras vacías sin datos. "Recuperan la inversión en X meses" es bueno pero prematuro sin conocer la comparación.'},
+
+  {id:21,area:'comunicacion',cat:'Tono en el seguimiento',
+   ctx:'Mandaste tres mails de seguimiento sin respuesta. El prospecto no contestó ninguno.',
+   q:'¿Cuál es el cuarto mail?',
+   ops:[
+     '"Solo quería saber si tuviste la oportunidad de revisar mi propuesta."',
+     '"Entiendo que estás ocupado. Te contacto en otro momento."',
+     '"Voy a ser directo: ¿tiene sentido seguir hablando o prefieren que lo retome en otro momento? Sin problema de cualquiera de las dos."',
+     'No mandás el cuarto mail — tres sin respuesta significa que no está interesado'
+   ],
+   ok:2,
+   exp:'El "breakup email" — el mail de ruptura — tiene el índice de respuesta más alto en secuencias de seguimiento. Poner al prospecto frente a una decisión binaria (sí o no) genera respuesta porque baja la presión. "Solo quería saber" es débil. "Entiendo que estás ocupado" es rendirse. Tres sin respuesta no significa no interés — puede significar que los mails anteriores no tenían suficiente hook.'},
+
+  // ══ PERFIL Y MENTALIDAD — 3 situaciones capciosas ══
+
+  {id:22,area:'mentalidad',cat:'Mes malo — trampa',
+   ctx:'Llevas dos meses sin cerrar ninguna venta. Tu manager te pregunta cómo estás.',
+   q:'¿Qué respondés?',
+   ops:[
+     '"Muy mal, el mercado está difícil y los prospectos no tienen presupuesto."',
+     '"Estoy revisando en qué parte del proceso se están cayendo las oportunidades para ajustar la estrategia."',
+     '"Voy a compensarlo el mes que viene, ya tengo varios leads calientes."',
+     '"Bien, estoy trabajando duro — los resultados van a llegar."'
+   ],
+   ok:1,
+   exp:'La respuesta que distingue a un vendedor profesional de uno amateur no es el resultado — es el diagnóstico. Un vendedor real analiza dónde se rompe el proceso: ¿en la prospección, en la reunión, en la propuesta, en el cierre? Culpar al mercado es evasión. "Los resultados van a llegar" sin análisis es esperanza sin estrategia. El único que tiene el control de sus resultados es el vendedor mismo.'},
+
+  {id:23,area:'mentalidad',cat:'El no como información',
+   q:'Un prospecto te dice que no por tercera vez en el año. ¿Qué hacés con ese dato?',
+   ops:[
+     'Lo eliminás del pipeline — tres veces es suficiente',
+     'Lo anotás y en seis meses volvés a intentarlo con el mismo approach',
+     'Le preguntás qué debería cambiar (en vos, en tu propuesta, o en el timing) para que en el futuro tenga sentido — y usás esa información para mejorar',
+     'Lo interpretás como que ese tipo de cliente no es para vos y ajustás tu perfil de prospecto'
+   ],
+   ok:2,
+   exp:'Cada "no" con feedback es oro para un vendedor que aprende. Preguntar qué debería cambiar cierra la conversación de manera elegante y abre la posibilidad de un sí futuro. También te da información real sobre tus puntos ciegos — algo que ningún curso de ventas puede darte. Los mejores vendedores aprenden más de sus fracasos que de sus cierres.'},
+
+  {id:24,area:'mentalidad',cat:'Autopresentación — trampa',
+   ctx:'Primera llamada en frío. Tenés 20 segundos para no perder la atención del prospecto.',
+   q:'¿Cómo arrancás?',
+   ops:[
+     '"Hola, soy [nombre] de [empresa], somos líderes en el mercado de consultoría ISO y me gustaría contarle sobre nuestros servicios..."',
+     '"Hola, [nombre]. Trabajo con empresas de [rubro] que tienen el problema de [problema específico]. ¿Es algo que les pasa a ustedes también?"',
+     '"Hola, ¿cómo estás? Te llamo porque vi que tu empresa está en el rubro de [X] y creo que podría interesarte lo que hacemos."',
+     '"Hola, tengo dos minutos de tu tiempo para contarte algo que podría interesarte."'
+   ],
+   ok:1,
+   exp:'El único pitch de apertura que funciona en frío es el que nombra un problema específico y relevante para el prospecto — no presenta la empresa, no pide tiempo, no presupone interés. "Trabajo con empresas que tienen el problema X, ¿les pasa?" obliga al prospecto a decir sí o no sobre su propio dolor, no sobre tu empresa. Empezar con "somos líderes" o pedir dos minutos son errores clásicos de quien aprendió ventas de un manual de los años 90.'},
+
+  {id:25,area:'mentalidad',cat:'Motivación real',
+   q:'¿Qué hace un vendedor excelente diferente de uno promedio en un mes de bajos resultados?',
+   ops:[
+     'Trabaja más horas para compensar el volumen',
+     'Mantiene la actitud positiva y confía en que va a mejorar',
+     'Analiza sus métricas de proceso (llamadas, reuniones, propuestas, cierres) para identificar exactamente en qué etapa está perdiendo y ajusta',
+     'Busca nuevos leads para reemplazar los que no avanzaron'
+   ],
+   ok:2,
+   exp:'La diferencia entre el vendedor de élite y el promedio es el análisis de proceso. Los resultados son una consecuencia de los indicadores de proceso: si caen las reuniones, hay que atacar la prospección. Si caen los cierres con muchas propuestas, hay un problema en la etapa de propuesta o en la calificación. Trabajar más horas sin cambiar el approach solo produce más del mismo resultado. La actitud positiva sin diagnóstico es autoengaño.'}
+];
+
+const AREA_LABELS = {cierre:'Cierre',objeciones:'Objeciones',pipeline:'Pipeline',negociacion:'Negociación',comunicacion:'Comunicación',mentalidad:'Mentalidad'};
+const AREA_ORDEN  = ['cierre','objeciones','pipeline','negociacion','comunicacion','mentalidad'];
+
+// ═══════════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://smcghyecpzzimadtuern.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtY2doeWVjcHp6aW1hZHR1ZXJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzODYwMTksImV4cCI6MjA4Nzk2MjAxOX0.u9OgCRMPFnuNLq4UinR1idpRykVF_VKPwIvFXgttVOw';
+
+const S={
+  get:k=>JSON.parse(localStorage.getItem('dc26_'+k)||'null'),
+  set:(k,v)=>localStorage.setItem('dc26_'+k,JSON.stringify(v)),
+};
+
+// Auto-fill código y empresa desde URL
+(function(){
+  const p = new URLSearchParams(window.location.search);
+  const _cod = p.get('codigo') || p.get('bpc_token');
+  const _emp = p.get('empresa');
+  if(_cod) document.addEventListener('DOMContentLoaded', ()=>{
+    const el = document.getElementById('acc-codigo');
+    if(el){ el.value = _cod.toUpperCase(); el.readOnly = true; }
+    const empEl = document.getElementById('acc-empresa-pre');
+    if(empEl && _emp) empEl.textContent = 'Empresa: ' + decodeURIComponent(_emp);
+  });
+})();
+
+// ═══════════════════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════════════════
+let session=null, respuestas={}, pregIdx=0, timerInt=null, segs=45*60;
+
+// ═══════════════════════════════════════════════════════
+// SCREENS
+// ═══════════════════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function showAdminLogin(){ showScreen('admin-login'); }
+
+// ═══════════════════════════════════════════════════════
+// ACCESO CANDIDATO
+// ═══════════════════════════════════════════════════════
+async function doAcceso(){
+  const nombre=document.getElementById('acc-nombre').value.trim();
+  const codigo=document.getElementById('acc-codigo').value.trim().toUpperCase();
+  const err=document.getElementById('acc-err');
+  if(!nombre){err.textContent='Ingresá tu nombre completo';return;}
+  if(codigo.length<4){err.textContent='Código inválido';return;}
+  err.textContent='Verificando...';
+  
+  try{
+    // Buscar en Supabase
+    const r = await fetch(SUPABASE_URL+'/rest/v1/examen_codigos?codigo=eq.'+codigo+'&activo=eq.true&select=*',{
+      headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+    });
+    const rows = await r.json();
+    if(!rows || !rows.length){err.textContent='Código no encontrado';return;}
+    const match = rows[0];
+    if(match.usado){err.textContent='Este código ya fue utilizado';return;}
+    err.textContent='';
+    session={nombre,empresa:match.empresa,codigo,codigoId:match.id,sbId:match.id};
+    const partes=nombre.trim().split(' ');
+    const iniciales=(partes[0][0]+(partes[1]?partes[1][0]:'')).toUpperCase();
+    document.getElementById('bv-avatar').textContent=iniciales;
+    document.getElementById('bv-nombre').textContent=nombre;
+    document.getElementById('bv-empresa').textContent=match.empresa||'—';
+    showScreen('bienvenida');
+  }catch(e){
+    err.textContent='Error de conexión. Intentá de nuevo.';
+    console.error(e);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// DIAGNÓSTICO
+// ═══════════════════════════════════════════════════════
+function iniciarDiag(){
+  respuestas={};pregIdx=0;segs=45*60;
+  showScreen('diag');
+  renderPregunta();
+  startTimer();
+}
+
+function renderPregunta(){
+  const p=ITEMS[pregIdx];
+  const done=Object.keys(respuestas).length;
+  // progress
+  document.getElementById('diag-prog-fill').style.width=(done/ITEMS.length*100)+'%';
+  document.getElementById('diag-prog-text').textContent=(pregIdx+1)+' / '+ITEMS.length;
+  // dots
+  document.getElementById('diag-dots').innerHTML=ITEMS.map((x,i)=>`<div class="q-dot ${respuestas[x.id]!==undefined?'done':''} ${i===pregIdx?'curr':''}" onclick="irA(${i})"></div>`).join('');
+  const ya=respuestas[p.id]!==undefined;
+  const letras=['A','B','C','D'];
+  const pillCls='pill-'+p.area;
+  const pendientes=ITEMS.length-Object.keys(respuestas).length;
+  document.getElementById('diag-body').innerHTML=`
+    <div class="q-num">Situación ${pregIdx+1} de ${ITEMS.length}</div>
+    <div class="q-area-pill ${pillCls}">${AREA_LABELS[p.area]||p.area} · ${p.cat}</div>
+    ${p.ctx?`<div class="q-ctx">${p.ctx}</div>`:''}
+    <div class="q-texto">${p.q}</div>
+    <div class="q-opciones">
+      ${p.ops.map((op,i)=>{
+        let cls='opcion';
+        if(ya){if(i===p.ok)cls+=' correct';else if(i===respuestas[p.id]&&i!==p.ok)cls+=' wrong';}
+        else if(i===respuestas[p.id])cls+=' selected';
+        return `<button class="${cls}" onclick="${ya?'':'elegir('+p.id+','+i+')'}">
+          <span class="opcion-idx">${letras[i]}</span>
+          <span>${op}</span>
+        </button>`;
+      }).join('')}
+    </div>
+    <div class="q-nav">
+      <button class="nav-prev" onclick="irA(${pregIdx-1})" ${pregIdx===0?'disabled':''}>← Anterior</button>
+      ${pregIdx<ITEMS.length-1
+        ?`<button class="nav-next" onclick="irA(${pregIdx+1})">Siguiente →</button>`
+        :`<button class="nav-next ${pendientes>0?'warn-finish':''}" onclick="finalizarDiag()">
+           ${pendientes>0?'⚠ Finalizar ('+pendientes+' sin responder)':'Completar →'}
+         </button>`
+      }
+    </div>`;
+}
+
+function elegir(id,idx){
+  if(respuestas[id]!==undefined)return;
+  respuestas[id]=idx;
+  renderPregunta();
+}
+
+function irA(idx){
+  if(idx<0||idx>=ITEMS.length)return;
+  pregIdx=idx;renderPregunta();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function startTimer(){
+  clearInterval(timerInt);
+  timerInt=setInterval(()=>{
+    segs--;
+    const m=Math.floor(segs/60),s=segs%60;
+    const el=document.getElementById('diag-timer');
+    if(el){
+      el.textContent=m+':'+(s<10?'0':'')+s;
+      el.className='diag-timer'+(segs<300?' crit':segs<600?' warn':'');
+    }
+    if(segs<=0){clearInterval(timerInt);finalizarDiag();}
+  },1000);
+}
+
+async function finalizarDiag(){
+  clearInterval(timerInt);
+  guardarResultado();
+  // Marcar código como usado en Supabase
+  try{
+    await fetch(SUPABASE_URL+'/rest/v1/examen_codigos?codigo=eq.'+session.codigo,{
+      method:'PATCH',
+      headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},
+      body: JSON.stringify({usado:true})
+    });
+  }catch(e){ console.error('Error marcando código como usado:', e); }
+  document.getElementById('cierre-ref-code').textContent=session.codigo;
+  showScreen('cierre');
+}
+
+// ═══════════════════════════════════════════════════════
+// RESULTADO
+// ═══════════════════════════════════════════════════════
+function calcScore(){
+  let total=0;
+  const areas={};
+  AREA_ORDEN.forEach(a=>{areas[a]={ok:0,total:0};});
+  ITEMS.forEach(p=>{
+    areas[p.area].total++;
+    if(respuestas[p.id]===p.ok){total++;areas[p.area].ok++;}
+  });
+  const pct=Math.round(total/ITEMS.length*100);
+  const areaPct={};
+  AREA_ORDEN.forEach(a=>{areaPct[a]=Math.round(areas[a].ok/areas[a].total*100);});
+  return{total,pct,areas:areaPct};
+}
+
+function guardarResultado(){
+  const sc=calcScore();
+  const nivel=sc.pct>=85?'Experto':sc.pct>=70?'Competente':sc.pct>=50?'En desarrollo':'Insuficiente';
+  // Guardar respuestas completas para análisis IA
+  const respDetalle = ITEMS.map(p=>({
+    id:p.id, area:p.area, cat:p.cat,
+    pregunta:p.q,
+    opcionElegida:p.ops[respuestas[p.id]??-1]||'Sin respuesta',
+    esCorrecta:respuestas[p.id]===p.ok,
+    opcionCorrecta:p.ops[p.ok],
+    idxElegido:respuestas[p.id]??-1,
+  }));
+  const r={
+    id:Date.now(),nombre:session.nombre,empresa:session.empresa,
+    codigo:session.codigo,codigoId:session.codigoId,
+    score:sc.pct,correctas:sc.total,total:ITEMS.length,
+    nivel,areas:sc.areas,desbloqueado:false,
+    respDetalle, iaInforme:null, iaStatus:'pendiente',
+    fecha:new Date().toLocaleDateString('es-AR'),iso:new Date().toISOString(),
+  };
+  const rs=S.get('resultados')||[];rs.push(r);S.set('resultados',rs);
+  // Disparar análisis IA en background
+  analizarConIA(r.id);
+}
+
+// ═══════════════════════════════════════════════════════
+// ANÁLISIS IA INTERNO — Solo auditor
+// ═══════════════════════════════════════════════════════
+async function analizarConIA(resultadoId){
+  const rs = S.get('resultados')||[];
+  const r = rs.find(x=>x.id===resultadoId);
+  if(!r||!r.respDetalle) return;
+
+  // Construir resumen de respuestas para el prompt
+  const errores = r.respDetalle.filter(x=>!x.esCorrecta);
+  const aciertos = r.respDetalle.filter(x=>x.esCorrecta);
+  
+  let resumenRespuestas = '';
+  r.respDetalle.forEach(p=>{
+    resumenRespuestas += `
+[${p.area.toUpperCase()} — ${p.cat}]
+`;
+    resumenRespuestas += `Pregunta: ${p.pregunta}
+`;
+    resumenRespuestas += `Respondió: "${p.opcionElegida}" ${p.esCorrecta?'✓':'✗'}
+`;
+    if(!p.esCorrecta) resumenRespuestas += `Correcta era: "${p.opcionCorrecta}"
+`;
+  });
+
+  const prompt = `Sos un auditor senior de MetoGroup especializado en evaluación de equipos comerciales bajo la norma BPC:2026. 
+Analizaste a un vendedor llamado ${r.nombre} de la empresa ${r.empresa}.
+
+Obtuvo ${r.score}% (${r.correctas} de ${r.total} correctas). Nivel: ${r.nivel}.
+
+Acá están sus respuestas completas:
+${resumenRespuestas}
+
+Generá un informe INTERNO para el auditor (no para el candidato). Sé directo, técnico y sin suavizar.
+
+Respondé SOLO en JSON con esta estructura exacta:
+{
+  "veredicto": "texto de 2-3 oraciones con el veredicto directo sobre el nivel comercial real de esta persona",
+  "perfil": "Amateur|Vendedor en formación|Vendedor funcional|Vendedor profesional|Vendedor de élite",
+  "fortalezas": ["máximo 3 puntos fuertes concretos basados en sus respuestas correctas"],
+  "puntosCiegos": ["máximo 4 puntos ciegos críticos basados en sus errores — nombrar la situación específica"],
+  "patronPeligroso": "si existe, describir un patrón de respuestas que indica un problema sistémico (ej: siempre evita la confrontación, nunca toma iniciativa, confunde actividad con resultados)",
+  "recomendacion": "recomendación concreta al auditor sobre qué hacer con este vendedor",
+  "aptitudVentas": 0-100
+}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1200,
+        system:'Sos auditor BPC:2026. Respondés SOLO con JSON válido. Sin markdown, sin texto adicional.',
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await res.json();
+    let iaData = null;
+    try{
+      const raw = data.content[0].text.replace(/```json|```/g,'').trim();
+      iaData = JSON.parse(raw);
+    }catch(e){ iaData = {veredicto:'Análisis no disponible.',perfil:'—',fortalezas:[],puntosCiegos:[],patronPeligroso:'',recomendacion:'',aptitudVentas:r.score}; }
+    
+    // Guardar resultado con análisis IA
+    const rsUpdated = S.get('resultados')||[];
+    const idx = rsUpdated.findIndex(x=>x.id===resultadoId);
+    if(idx>-1){
+      rsUpdated[idx].iaInforme = iaData;
+      rsUpdated[idx].iaStatus = 'listo';
+      S.set('resultados', rsUpdated);
+    }
+  } catch(e){
+    const rsU = S.get('resultados')||[];
+    const idx = rsU.findIndex(x=>x.id===resultadoId);
+    if(idx>-1){ rsU[idx].iaStatus='error'; S.set('resultados',rsU); }
+  }
+}
+
+function mostrarResultadoDesbloqueado(resultadoId){
+  const rs=S.get('resultados')||[];
+  const r=rs.find(x=>x.id===resultadoId);
+  if(!r)return;
+  const nivelColor={Experto:'rgba(34,211,165,.9)',Competente:'rgba(99,102,241,.9)','En desarrollo':'rgba(245,158,11,.9)',Insuficiente:'rgba(244,63,94,.8)'}[r.nivel]||'rgba(248,248,255,.5)';
+  const scoreColor=r.score>=70?'var(--green)':r.score>=50?'var(--amber)':'var(--red)';
+  document.getElementById('res-nombre').textContent=r.nombre;
+  document.getElementById('res-empresa').textContent=r.empresa;
+  document.getElementById('res-score-num').textContent=r.score+'%';
+  document.getElementById('res-score-num').style.color=scoreColor;
+  document.getElementById('res-score-pct').textContent=r.correctas+' de '+r.total+' correctas';
+  document.getElementById('res-nivel').textContent=r.nivel;
+  document.getElementById('res-nivel').style.cssText=\`background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:\${nivelColor};border-radius:20px;\`;
+  const areaColors={cierre:'#818cf8',objeciones:'#fbbf24',pipeline:'#22d3a5',negociacion:'#f472b6',comunicacion:'#fbbf24',mentalidad:'#f87171'};
+  document.getElementById('res-areas').innerHTML=AREA_ORDEN.map(a=>`
+    <div class="res-area-card">
+      <div class="res-area-top">
+        <div class="res-area-name">${AREA_LABELS[a]}</div>
+        <div class="res-area-pct" style="color:${areaColors[a]}">${r.areas?.[a]||0}%</div>
+      </div>
+      <div class="res-area-bar">
+        <div class="res-area-fill" style="width:0;background:${areaColors[a]}" id="rf-${a}"></div>
+      </div>
+    </div>`).join('');
+  showScreen('resultado');
+  setTimeout(()=>{
+    AREA_ORDEN.forEach(a=>{
+      const el=document.getElementById('rf-'+a);
+      if(el)el.style.width=(r.areas?.[a]||0)+'%';
+    });
+  },200);
+}
+
+// ═══════════════════════════════════════════════════════
+// ADMIN
+// ═══════════════════════════════════════════════════════
+const ADMIN_PASS='MetoBPC2026';
+let adminAuth=false;
+
+function doAdminLogin(){
+  const p=document.getElementById('adm-pass').value;
+  if(p===ADMIN_PASS){adminAuth=true;showScreen('admin');renderAdmin();}
+  else document.getElementById('adm-err').textContent='Contraseña incorrecta';
+}
+function doLogout(){adminAuth=false;showScreen('acceso');}
+
+function generarCodigo(){
+  const nombre=document.getElementById('adm-nombre').value.trim();
+  const empresa=document.getElementById('adm-empresa').value.trim();
+  if(!nombre||!empresa){toast('Completá nombre y empresa');return;}
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code='';for(let i=0;i<6;i++)code+=chars[Math.floor(Math.random()*chars.length)];
+  const codigos=S.get('codigos')||[];
+  codigos.push({id:Date.now(),codigo:code,nombre,empresa,activo:true,usado:false,fecha:new Date().toLocaleDateString('es-AR')});
+  S.set('codigos',codigos);
+  document.getElementById('adm-nombre').value='';
+  document.getElementById('adm-empresa').value='';
+  renderAdmin();
+  toast('Código '+code+' generado para '+nombre);
+}
+
+function eliminarCodigo(id){
+  if(!confirm('¿Eliminar este código?'))return;
+  S.set('codigos',(S.get('codigos')||[]).filter(c=>c.id!==id));
+  renderAdmin();
+}
+
+function desbloquearResultado(rId){
+  const rs=S.get('resultados')||[];
+  const i=rs.findIndex(x=>x.id===rId);
+  if(i>-1){rs[i].desbloqueado=true;S.set('resultados',rs);}
+  renderAdmin();
+  verInformeIA(rId);
+}
+
+function verInformeIA(rId){
+  const rs=S.get('resultados')||[];
+  const r=rs.find(x=>x.id===rId);
+  if(!r) return;
+  const ia=r.iaInforme;
+  const areaColors={cierre:'rgba(240,237,230,.7)',objeciones:'rgba(201,168,76,.7)',pipeline:'rgba(99,200,150,.6)',negociacion:'rgba(148,130,220,.7)',comunicacion:'rgba(45,212,191,.6)',mentalidad:'rgba(244,114,182,.6)'};
+  
+  const perfilColor = {
+    'Vendedor de élite':'rgba(34,197,94,.8)',
+    'Vendedor profesional':'rgba(201,168,76,.8)',
+    'Vendedor funcional':'rgba(45,212,191,.7)',
+    'Vendedor en formación':'rgba(245,158,11,.7)',
+    'Amateur':'rgba(239,68,68,.7)'
+  }[ia?.perfil]||'rgba(240,237,230,.5)';
+
+  const modal=document.createElement('div');
+  modal.className='modal-overlay';
+  modal.style.cssText='position:fixed;inset:0;z-index:200;background:rgba(8,10,13,.92);backdrop-filter:blur(12px);display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto;';
+  modal.innerHTML=`
+  <div style="background:var(--ink2);border:1px solid var(--border-strong);width:100%;max-width:680px;margin:auto;animation:scaleIn .25s cubic-bezier(.16,1,.3,1)">
+    <!-- Header -->
+    <div style="padding:28px 32px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:rgba(201,168,76,.5);margin-bottom:8px">Informe Interno · Solo Auditor · BPC:2026</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300">${r.nombre}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-tertiary);letter-spacing:1px;margin-top:3px">${r.empresa} · ${r.fecha}</div>
+      </div>
+      <button onclick="this.closest('.modal-overlay').remove()" style="background:none;color:var(--text-secondary);font-size:18px;cursor:pointer;padding:4px;flex-shrink:0">✕</button>
+    </div>
+    
+    <!-- Score + Perfil -->
+    <div style="padding:24px 32px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:32px;flex-wrap:wrap">
+      <div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:56px;font-weight:300;line-height:1;color:${r.score>=70?'rgba(34,197,94,.8)':r.score>=50?'rgba(201,168,76,.8)':'rgba(239,68,68,.7)'}">${r.score}<span style="font-size:24px;opacity:.5">%</span></div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-tertiary);letter-spacing:1px">${r.correctas} de ${r.total} correctas</div>
+      </div>
+      ${ia?`
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-tertiary);letter-spacing:1px;margin-bottom:8px">PERFIL</div>
+        <div style="font-family:'Instrument Sans',sans-serif;font-size:15px;font-weight:600;color:${perfilColor};padding:6px 16px;border:1px solid ${perfilColor};display:inline-block">${ia.perfil||'—'}</div>
+      </div>
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-tertiary);letter-spacing:1px;margin-bottom:8px">APTITUD VENTAS (IA)</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:300;color:${ia.aptitudVentas>=70?'rgba(34,197,94,.8)':ia.aptitudVentas>=50?'rgba(201,168,76,.8)':'rgba(239,68,68,.7)'}">${ia.aptitudVentas??'—'}</div>
+      </div>`:''}
+    </div>
+
+    <!-- Scores por área -->
+    <div style="padding:20px 32px;border-bottom:1px solid var(--border)">
+      <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:14px">Scores por dimensión</div>
+      ${AREA_ORDEN.map(a=>`
+      <div style="display:grid;grid-template-columns:120px 48px 1fr;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.03)">
+        <div style="font-size:11px;color:var(--text-secondary)">${AREA_LABELS[a]}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;text-align:right;color:${areaColors[a]}">${r.areas?.[a]||0}%</div>
+        <div style="height:1px;background:var(--border)"><div style="height:1px;background:${areaColors[a]};width:${r.areas?.[a]||0}%"></div></div>
+      </div>`).join('')}
+    </div>
+
+    ${ia?`
+    <!-- Veredicto IA -->
+    <div style="padding:24px 32px;border-bottom:1px solid var(--border)">
+      <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,.5);margin-bottom:12px">Veredicto del auditor</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:300;font-style:italic;line-height:1.7;color:var(--text-secondary)">"${ia.veredicto||'—'}"</div>
+    </div>
+
+    <!-- Fortalezas y Puntos ciegos -->
+    <div style="padding:24px 32px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(34,197,94,.5);margin-bottom:12px">Fortalezas</div>
+        ${(ia.fortalezas||[]).map(f=>`<div style="font-size:12px;color:var(--text-secondary);padding:8px 0;border-bottom:1px solid var(--border);line-height:1.5">→ ${f}</div>`).join('')||'<div style="font-size:11px;color:var(--text-tertiary)">Sin fortalezas detectadas</div>'}
+      </div>
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(239,68,68,.5);margin-bottom:12px">Puntos ciegos</div>
+        ${(ia.puntosCiegos||[]).map(p=>`<div style="font-size:12px;color:var(--text-secondary);padding:8px 0;border-bottom:1px solid var(--border);line-height:1.5">→ ${p}</div>`).join('')||'<div style="font-size:11px;color:var(--text-tertiary)">Sin puntos ciegos detectados</div>'}
+      </div>
+    </div>
+
+    ${ia.patronPeligroso?`
+    <div style="padding:20px 32px;border-bottom:1px solid var(--border);background:rgba(239,68,68,.03)">
+      <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(239,68,68,.5);margin-bottom:10px">⚠ Patrón sistémico detectado</div>
+      <div style="font-size:12px;color:rgba(239,68,68,.7);line-height:1.6">${ia.patronPeligroso}</div>
+    </div>`:''}
+
+    <!-- Recomendación -->
+    <div style="padding:24px 32px;border-bottom:1px solid var(--border)">
+      <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,.5);margin-bottom:10px">Recomendación al auditor</div>
+      <div style="font-size:13px;color:var(--text-primary);line-height:1.7">${ia.recomendacion||'—'}</div>
+    </div>
+    `:`
+    <div style="padding:32px;text-align:center">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-tertiary);letter-spacing:1px">
+        ${r.iaStatus==='pendiente'?'⏳ Análisis IA en proceso...':r.iaStatus==='error'?'⚠ Análisis IA no disponible (sin conexión)':'Análisis pendiente'}
+      </div>
+      ${r.iaStatus==='pendiente'?`<button onclick="this.closest('.modal-overlay').remove();setTimeout(()=>verInformeIA(${rId}),3000)" style="margin-top:16px;background:none;border:1px solid var(--border-strong);color:var(--text-secondary);padding:8px 20px;cursor:pointer;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px">Actualizar en 3 segundos →</button>`:''}
+    </div>`}
+
+    <!-- Respuestas detalle -->
+    <div style="padding:20px 32px;border-bottom:1px solid var(--border)">
+      <details>
+        <summary style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--text-tertiary);cursor:pointer;list-style:none">
+          Ver respuestas detalladas (${r.respDetalle?.length||0} items) ›
+        </summary>
+        <div style="margin-top:16px">
+          ${(r.respDetalle||[]).map(p=>`
+          <div style="padding:12px 0;border-bottom:1px solid var(--border)">
+            <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--text-tertiary);text-transform:uppercase;margin-bottom:6px">${p.area} · ${p.cat}</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;line-height:1.5">${p.pregunta}</div>
+            <div style="font-size:11px;padding:6px 10px;border-left:2px solid ${p.esCorrecta?'rgba(34,197,94,.5)':'rgba(239,68,68,.4)'};color:${p.esCorrecta?'rgba(34,197,94,.7)':'rgba(239,68,68,.6)'}">
+              ${p.esCorrecta?'✓':'✗'} "${p.opcionElegida}"
+            </div>
+            ${!p.esCorrecta?`<div style="font-size:10px;color:var(--text-tertiary);padding:4px 10px 0">Correcta: "${p.opcionCorrecta}"</div>`:''}
+          </div>`).join('')}
+        </div>
+      </details>
+    </div>
+
+    <!-- Acciones -->
+    <div style="padding:20px 32px;display:flex;gap:10px;flex-wrap:wrap">
+      <button onclick="window.print()" style="padding:10px 20px;background:var(--text-primary);color:var(--ink);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:none">Imprimir informe</button>
+      <button onclick="this.closest('.modal-overlay').remove()" style="padding:10px 20px;background:transparent;border:1px solid var(--border-strong);color:var(--text-secondary);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer">Cerrar</button>
+      ${r.desbloqueado?`<button onclick="this.closest('.modal-overlay').remove();mostrarResultadoDesbloqueado(${rId})" style="padding:10px 20px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:rgba(201,168,76,.8);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer">Ver versión candidato →</button>`:''}
+    </div>
+  </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+}
+
+function copiarCodigo(code,nombre){
+  const url=window.location.href.split('?')[0];
+  navigator.clipboard.writeText(`Hola ${nombre}. Tu código de acceso para el Diagnóstico de Competencias MetoGroup es: ${code}\nIngresá en: ${url}`);
+  toast('Mensaje copiado — listo para enviar');
+}
+
+function renderAdmin(){
+  const codigos=S.get('codigos')||[];
+  const resultados=S.get('resultados')||[];
+  const pendientes=codigos.filter(c=>!c.usado).length;
+  document.getElementById('adm-stat').textContent=pendientes+' pendientes · '+resultados.length+' completados';
+  // Grid códigos
+  const grid=document.getElementById('codes-grid');
+  if(!codigos.length){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1">Sin códigos generados</div>';
+  } else {
+    grid.innerHTML=codigos.map(c=>`
+    <div class="code-card">
+      <div class="cc-nombre">${c.nombre}</div>
+      <div class="cc-empresa">${c.empresa}</div>
+      <div class="cc-code">${c.codigo}</div>
+      <div class="cc-status ${c.usado?'c':'p'}">
+        <div class="cc-dot ${c.usado?'c':'p'}"></div>
+        ${c.usado?'Completado':'Pendiente'}
+      </div>
+      <div class="cc-fecha">${c.fecha||'—'}</div>
+      <div class="cc-actions">
+        <button class="cc-btn" onclick="copiarCodigo('${c.codigo}','${c.nombre}')">Copiar</button>
+        <button class="cc-btn del" onclick="eliminarCodigo(${c.id})">Eliminar</button>
+      </div>
+    </div>`).join('');
+  }
+  // Tabla resultados
+  const tbody=document.getElementById('res-tbody');
+  if(!resultados.length){
+    tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--text-tertiary);font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:1px">Sin resultados registrados</td></tr>';
+  } else {
+    tbody.innerHTML=[...resultados].reverse().map(r=>{
+      const cls=r.score>=70?'high':r.score>=50?'mid':'low';
+      return `<tr>
+        <td style="font-family:'Cormorant Garamond',serif;font-size:15px">${r.nombre}</td>
+        <td>${r.empresa}</td>
+        <td><span class="score-chip s-${cls}">${r.score}%</span></td>
+        <td style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--text-secondary)">${r.nivel}</td>
+        ${AREA_ORDEN.map(a=>`<td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-secondary)">${r.areas?.[a]||0}%</td>`).join('')}
+        <td style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-tertiary)">${r.fecha}</td>
+        <td>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <button class="cc-btn unlock" onclick="verInformeIA(${r.id})" style="white-space:nowrap">
+              ${r.iaStatus==='listo'?'📊 Informe IA':r.iaStatus==='pendiente'?'⏳ Procesando...':'Ver resultado'}
+            </button>
+            ${!r.desbloqueado?`<button class="cc-btn" onclick="desbloquearResultado(${r.id})" style="font-size:8px">Desbloquear p/ candidato</button>`:'<span style="font-family:\'DM Mono\',monospace;font-size:8px;color:var(--text-tertiary);padding:2px 4px">✓ Desbloqueado</span>'}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+function toast(msg){
+  const el=document.createElement('div');
+  el.className='toast';el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2600);
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  const s=document.querySelector('.screen.active');
+  if(s?.id==='screen-acceso')doAcceso();
+  if(s?.id==='screen-admin-login')doAdminLogin();
+});
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
