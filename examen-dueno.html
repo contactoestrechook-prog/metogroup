@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico Dueño/Director — MetoGroup BPC:2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080808;--surface:#141410;--surface2:#1c1a14;--border:rgba(212,175,55,0.18);
+  --accent:#d4af37;--accent2:#f5d060;--accent3:#b8922e;
+  --danger:#ef4444;--warn:#f59e0b;--text:#f0e8d0;--muted:#8a7a5a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5}
+.top-rule{position:fixed;top:0;left:0;right:0;height:1px;z-index:100;background:linear-gradient(90deg,transparent 0%,rgba(212,175,55,.6) 35%,rgba(255,215,80,.9) 50%,rgba(212,175,55,.6) 65%,transparent 100%)}
+
+.screen{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:24px;transition:opacity .4s,transform .4s}
+.screen.hidden{opacity:0;pointer-events:none;transform:translateY(20px)}
+
+/* ACCESS */
+.access-card{
+  width:440px;max-width:95vw;
+  background:linear-gradient(160deg,rgba(28,26,18,.97),rgba(20,18,12,.99));
+  border:1px solid rgba(212,175,55,.22);border-radius:20px;padding:40px 36px;text-align:center;
+  animation:fadeUp .8s cubic-bezier(.22,1,.36,1) both;
+  box-shadow:0 40px 100px rgba(0,0,0,.7);
+}
+.brand{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(120deg,#8a6a1a 0%,#c9a84c 25%,#f0d060 45%,#fff8e0 55%,#f0d060 65%,#c9a84c 80%,#8a6a1a 100%);
+  background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:shimmer 6s linear infinite;margin-bottom:4px;}
+.brand-sub{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.role-badge{
+  display:inline-block;background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.25);
+  border-radius:20px;padding:4px 14px;font-size:10px;color:var(--accent3);
+  letter-spacing:1px;text-transform:uppercase;margin-bottom:24px;
+}
+.access-title{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;margin-bottom:8px}
+.access-desc{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:24px}
+.code-input{
+  width:100%;background:rgba(0,0,0,.4);border:1.5px solid rgba(212,175,55,.25);
+  border-radius:12px;padding:16px 20px;margin-bottom:10px;
+  font-family:'Syne',sans-serif;font-size:2rem;font-weight:900;
+  letter-spacing:8px;text-align:center;text-transform:uppercase;
+  color:var(--accent2);outline:none;transition:border-color .2s;
+}
+.code-input:focus{border-color:rgba(212,175,55,.6)}
+.code-input.error{border-color:var(--danger);animation:shake .3s}
+.access-error{font-size:11px;color:var(--danger);margin-bottom:12px;min-height:16px}
+.btn-access{
+  width:100%;padding:14px;border:1px solid rgba(200,168,74,.35);border-radius:12px;
+  background:linear-gradient(135deg,rgba(200,168,74,.2),rgba(200,168,74,.1));
+  color:var(--accent2);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:1px;cursor:pointer;transition:all .2s;text-transform:uppercase;
+}
+.btn-access:hover{background:linear-gradient(135deg,rgba(200,168,74,.3),rgba(200,168,74,.18));transform:translateY(-1px)}
+.btn-access:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.access-hint{font-size:10px;color:var(--muted);margin-top:14px;line-height:1.5}
+
+/* EXAM */
+.exam-wrap{width:720px;max-width:96vw;animation:fadeUp .6s cubic-bezier(.22,1,.36,1) both}
+.exam-header{
+  background:linear-gradient(160deg,rgba(28,26,18,.97),rgba(20,18,12,.99));
+  border:1px solid rgba(212,175,55,.18);border-radius:16px 16px 0 0;
+  padding:18px 28px;display:flex;align-items:center;justify-content:space-between;
+}
+.exam-brand{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--accent)}
+.progress-bar{height:3px;background:rgba(212,175,55,.08);overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent3),var(--accent2));transition:width .5s}
+.exam-body{
+  background:linear-gradient(160deg,rgba(22,20,14,.98),rgba(16,14,10,.99));
+  border:1px solid rgba(212,175,55,.18);border-top:none;
+  padding:32px 36px;min-height:380px;display:flex;flex-direction:column;
+}
+.q-dim{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--accent3);margin-bottom:6px}
+.q-counter{font-size:11px;color:var(--muted);margin-bottom:18px}
+.q-text{font-family:'Syne',sans-serif;font-size:1rem;font-weight:600;line-height:1.6;margin-bottom:24px;flex:1}
+.q-scale{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+.q-option{
+  background:rgba(255,255,255,.03);border:1px solid rgba(212,175,55,.1);
+  border-radius:10px;padding:12px 16px;cursor:pointer;
+  font-size:12px;line-height:1.4;color:var(--text);
+  transition:all .15s;text-align:left;
+}
+.q-option:hover{background:rgba(212,175,55,.07);border-color:rgba(212,175,55,.3);transform:translateX(2px)}
+.q-option.selected{background:rgba(212,175,55,.12);border-color:rgba(212,175,55,.5);color:var(--accent2)}
+.exam-nav{display:flex;justify-content:space-between;align-items:center;padding-top:16px;border-top:1px solid rgba(212,175,55,.08)}
+.btn-nav{padding:10px 22px;border:1px solid rgba(212,175,55,.2);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-family:'Syne',sans-serif;font-weight:600;transition:all .15s}
+.btn-nav:hover:not(:disabled){border-color:rgba(212,175,55,.5);color:var(--accent)}
+.btn-nav:disabled{opacity:.3;cursor:not-allowed}
+.btn-nav.primary{background:linear-gradient(135deg,rgba(200,168,74,.2),rgba(200,168,74,.1));border-color:rgba(200,168,74,.35);color:var(--accent2)}
+
+/* RESULT */
+.result-card{
+  width:660px;max-width:96vw;
+  background:linear-gradient(160deg,rgba(28,26,18,.97),rgba(20,18,12,.99));
+  border:1px solid rgba(212,175,55,.22);border-radius:20px;overflow:hidden;
+  animation:fadeUp .7s cubic-bezier(.22,1,.36,1) both;
+  max-height:90vh;overflow-y:auto;
+}
+.result-head{padding:28px 32px;border-bottom:1px solid rgba(212,175,55,.1)}
+.result-ring{
+  width:88px;height:88px;border-radius:50%;border:4px solid var(--accent3);
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(212,175,55,.06);margin:0 auto 16px;
+}
+.result-score{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:900;color:var(--accent2)}
+.result-body{padding:24px 32px}
+.dim-row{margin-bottom:12px}
+.dim-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.dim-bar{height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:2px}
+.dim-fill{height:100%;border-radius:99px;transition:width 1s .3s}
+.informe-box{background:rgba(212,175,55,.04);border:1px solid rgba(212,175,55,.1);border-radius:12px;padding:18px;margin-top:16px}
+.informe-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);margin-bottom:10px}
+.informe-text{font-size:12px;line-height:1.7;color:rgba(240,232,208,.8)}
+.spinner{width:12px;height:12px;border:2px solid rgba(212,175,55,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;margin-right:8px}
+.result-footer{padding:0 32px 24px;display:flex;gap:10px}
+.btn-r{flex:1;padding:12px;border-radius:10px;cursor:pointer;font-size:12px;font-family:'Syne',sans-serif;font-weight:700;transition:all .15s}
+.btn-r.sec{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:var(--muted)}
+.btn-r.pri{background:linear-gradient(135deg,rgba(200,168,74,.2),rgba(200,168,74,.1));border:1px solid rgba(200,168,74,.35);color:var(--accent2)}
+
+/* LOAD */
+#load-overlay{position:fixed;inset:0;z-index:999;background:rgba(8,8,8,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .4s}
+#load-overlay.hidden{opacity:0;pointer-events:none}
+.load-icon{font-size:28px;animation:pulse 1.5s ease-in-out infinite}
+.load-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--accent)}
+.load-msg{font-size:12px;color:var(--muted)}
+.load-bar-wrap{width:240px;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.load-bar{height:100%;background:linear-gradient(90deg,var(--accent3),var(--accent2));transition:width .4s}
+</style>
+</head>
+<body>
+<div class="top-rule"></div>
+<canvas id="bg-canvas"></canvas>
+
+<div id="load-overlay">
+  <div class="load-icon">⬡</div>
+  <div class="load-title">MetoGroup</div>
+  <div class="load-msg" id="load-msg">Verificando acceso...</div>
+  <div class="load-bar-wrap"><div class="load-bar" id="load-bar" style="width:15%"></div></div>
+</div>
+
+<!-- ACCESS -->
+<div class="screen hidden" id="screen-access">
+  <div class="access-card">
+    <div class="brand">MetoGroup</div>
+    <div class="brand-sub">BPC:2026 · Diagnóstico</div>
+    <div class="role-badge">👑 Dueño / Director</div>
+    <div class="access-title">Ingresá tu código de acceso</div>
+    <div class="access-desc">Este diagnóstico evalúa tu perfil de liderazgo comercial en 6 dimensiones clave. Fue preparado específicamente para vos.</div>
+    <input class="code-input" id="code-input" maxlength="6" placeholder="XXXXXX" autocomplete="off" autocorrect="off" spellcheck="false">
+    <div class="access-error" id="access-error"></div>
+    <button class="btn-access" id="btn-access" onclick="verificarCodigo()">Comenzar diagnóstico →</button>
+    <div class="access-hint">Tus respuestas son confidenciales y no se compartirán internamente en tu empresa.</div>
+  </div>
+</div>
+
+<!-- EXAM -->
+<div class="screen hidden" id="screen-exam">
+  <div class="exam-wrap">
+    <div class="exam-header">
+      <div>
+        <div class="exam-brand">MetoGroup — Diagnóstico Dueño/Director</div>
+        <div id="exam-empresa-label" style="font-size:10px;color:var(--muted);margin-top:2px"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);text-align:right">
+        <div id="exam-counter-label">Pregunta 1 de 24</div>
+        <div id="exam-dim-label" style="color:var(--accent3);margin-top:2px"></div>
+      </div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="exam-body">
+      <div class="q-dim" id="q-dim"></div>
+      <div class="q-counter" id="q-counter"></div>
+      <div class="q-text" id="q-text"></div>
+      <div class="q-scale" id="q-options"></div>
+      <div class="exam-nav">
+        <button class="btn-nav" id="btn-prev" onclick="prevQ()">← Anterior</button>
+        <span id="nav-info" style="font-size:11px;color:var(--muted)"></span>
+        <button class="btn-nav primary" id="btn-next" onclick="nextQ()">Siguiente →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="screen hidden" id="screen-result">
+  <div class="access-card" style="max-width:480px;padding:48px 40px">
+    <div class="brand">MetoGroup</div>
+    <div class="brand-sub">BPC:2026 · Diagnóstico Dueño/Director</div>
+    <div style="font-size:48px;margin:24px 0 16px">✅</div>
+    <div style="font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:700;color:var(--text);margin-bottom:16px">
+      ¡Gracias por completar el diagnóstico!
+    </div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:32px">
+      Tus respuestas fueron registradas correctamente y serán analizadas por el equipo MetoGroup.<br><br>
+      Podés cerrar esta ventana.
+    </div>
+    <div style="width:100%;height:1px;background:var(--border);margin-bottom:24px"></div>
+    <div style="font-size:10px;color:var(--muted);letter-spacing:1px">
+      MetoGroup Latam S.A. · BPC:2026
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://smcghyecpzzimadtuern.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtY2doeWVjcHp6aW1hZHR1ZXJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzODYwMTksImV4cCI6MjA4Nzk2MjAxOX0.u9OgCRMPFnuNLq4UinR1idpRykVF_VKPwIvFXgttVOw';
+const SB_H   = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
+
+let ANTHROPIC_KEY = '';
+let codigoData    = null;
+let respuestas    = {};
+let qActual       = 0;
+
+// ── DIMENSIONES — 6 dims x 4 preguntas = 24 total ──
+const DIMS = [
+  { id:'delegacion',    label:'Delegación y Control' },
+  { id:'timing',        label:'Timing Comercial' },
+  { id:'canales',       label:'Gestión de Canales' },
+  { id:'decisiones',    label:'Toma de Decisiones' },
+  { id:'rol_comercial', label:'Rol Comercial del Dueño' },
+  { id:'finanzas',      label:'Visión Financiera Comercial' },
+];
+
+const PREGUNTAS = [
+  // ── DELEGACIÓN ──
+  {dim:'delegacion', texto:'Cuando delegás tareas comerciales a tu equipo:',
+   opciones:['Defino resultados esperados y los dejo trabajar con autonomía','Delego pero reviso el avance cada pocos días','Solo delego tareas menores; lo importante lo manejo yo','Generalmente no delego, prefiero hacerlo yo mismo'], pesos:[4,3,2,1]},
+  {dim:'delegacion', texto:'Tu equipo comercial toma decisiones de precio o condiciones sin consultarte:',
+   opciones:['Sí, dentro de rangos claros que establecí yo','A veces, en casos muy específicos','Rara vez, generalmente me consultan','Nunca, todas las decisiones pasan por mí'], pesos:[4,3,2,1]},
+  {dim:'delegacion', texto:'¿Con qué frecuencia el negocio se frena porque necesita tu aprobación?',
+   opciones:['Casi nunca; los procesos están diseñados para funcionar sin mí','Ocasionalmente, en decisiones importantes','Regularmente; soy el cuello de botella en varias áreas','Constantemente; soy imprescindible en el día a día'], pesos:[4,3,2,1]},
+  {dim:'delegacion', texto:'¿Tenés documentados los procesos comerciales de tu empresa?',
+   opciones:['Sí, están documentados y el equipo los sigue','Parcialmente; algunos procesos están escritos','Existen en mi cabeza pero no están formalizados','No; cada uno hace las cosas a su manera'], pesos:[4,3,2,1]},
+
+  // ── TIMING ──
+  {dim:'timing', texto:'¿Con qué anticipación planificás la estrategia comercial de tu empresa?',
+   opciones:['Con plan anual y revisiones trimestrales','Con objetivos semestrales y seguimiento mensual','Planificamos mes a mes','Reaccionamos según lo que va pasando'], pesos:[4,3,2,1]},
+  {dim:'timing', texto:'Cuando el mercado muestra señales de cambio (nuevos competidores, caída de demanda), tu respuesta típica es:',
+   opciones:['Ajustar la estrategia con anticipación, antes de que impacte fuerte','Ajustar cuando el impacto ya es visible','Esperar a ver cómo evoluciona antes de mover fichas','Reaccionar cuando el problema ya es urgente'], pesos:[4,3,2,1]},
+  {dim:'timing', texto:'¿Con qué frecuencia revisás métricas comerciales clave (facturación, conversión, ticket promedio)?',
+   opciones:['Semanalmente, tengo un tablero de indicadores','Mensualmente en reunión formal','Cuando hay un problema o fin de trimestre','Cuando alguien me trae los números'], pesos:[4,3,2,1]},
+  {dim:'timing', texto:'¿Tu empresa tiene definida una temporada fuerte y estrategias para aprovecharla?',
+   opciones:['Sí, con plan de acción concreto 3 meses antes','Sabemos cuándo viene pero no preparamos mucho','Más o menos sabemos cuándo es temporada alta','No tenemos definida una estrategia de temporadas'], pesos:[4,3,2,1]},
+
+  // ── CANALES ──
+  {dim:'canales', texto:'¿Cuántos canales de venta activos tiene tu empresa en este momento?',
+   opciones:['3 o más canales bien gestionados','2 canales activos','1 canal principal y algunos esporádicos','1 solo canal'], pesos:[4,3,2,1]},
+  {dim:'canales', texto:'¿Sabés cuál es el canal de venta con mejor retorno para tu empresa?',
+   opciones:['Sí, con datos concretos y lo optimizo activamente','Sí, lo sé pero no lo tengo muy medido','Tengo una intuición pero no datos precisos','No lo sé con certeza'], pesos:[4,3,2,1]},
+  {dim:'canales', texto:'¿Tu empresa trabaja con socios, distribuidores o alianzas para ampliar ventas?',
+   opciones:['Sí, tenemos una red de socios activa y gestionada','Tenemos algunas alianzas pero no las gestionamos activamente','Tuvimos, pero no funcionaron como esperábamos','No, vendemos siempre de forma directa'], pesos:[4,3,2,1]},
+  {dim:'canales', texto:'¿Cómo es la presencia digital de tu empresa como canal de ventas?',
+   opciones:['Es uno de nuestros canales principales con resultados medibles','Estamos presentes pero no generamos ventas consistentes','Tenemos redes y web pero no son canales de venta reales','Casi no tenemos presencia digital'], pesos:[4,3,2,1]},
+
+  // ── DECISIONES ──
+  {dim:'decisiones', texto:'¿Qué tan basadas en datos son las decisiones comerciales de tu empresa?',
+   opciones:['Mayormente basadas en datos; tenemos métricas claras','50/50 entre datos e intuición','Mayormente intuitivas, los datos no son el centro','Las decisiones son casi todas intuitivas'], pesos:[4,3,2,1]},
+  {dim:'decisiones', texto:'Cuando un vendedor no cumple objetivos por 2 meses seguidos, ¿qué hacés?',
+   opciones:['Reviso causas, doy feedback formal y acordamos un plan de mejora con plazo','Hablo con él informalmente y espero mejoría','Espero un tercer mes para ver si es una tendencia','Reacciono tardíamente o evito el conflicto'], pesos:[4,3,2,1]},
+  {dim:'decisiones', texto:'¿Con qué criterio tomás la decisión de entrar a un mercado nuevo o lanzar un producto?',
+   opciones:['Con investigación de mercado y análisis de rentabilidad previo','Con intuición basada en la experiencia y algunas consultas informales','Con entusiasmo del momento y aprendemos sobre la marcha','Esperamos que el mercado "nos pida" antes de movernos'], pesos:[4,3,2,1]},
+  {dim:'decisiones', texto:'¿Tus decisiones de precio están basadas en:',
+   opciones:['Costo + margen objetivo + posicionamiento + competencia, todo analizado','Costo + margen + una mirada al mercado','Principalmente lo que cobra la competencia','Principalmente lo que el mercado parece dispuesto a pagar'], pesos:[4,3,2,1]},
+
+  // ── ROL COMERCIAL ──
+  {dim:'rol_comercial', texto:'¿Qué porcentaje de tu tiempo como dueño destinás a actividades comerciales (ventas, clientes, estrategia de crecimiento)?',
+   opciones:['Más del 40%','Entre 20% y 40%','Entre 10% y 20%','Menos del 10%'], pesos:[4,3,2,1]},
+  {dim:'rol_comercial', texto:'¿Intervenís directamente en ventas importantes o negociaciones clave?',
+   opciones:['Sí, de forma estratégica y puntual en acuerdos de alto valor','Sí, frecuentemente porque soy el mejor vendedor','A veces, cuando el equipo no logra cerrar','Casi nunca; el equipo lo maneja todo'], pesos:[4,3,2,1]},
+  {dim:'rol_comercial', texto:'¿Tu equipo comercial sabe claramente cuál es la propuesta de valor diferencial de tu empresa?',
+   opciones:['Sí, está definida, comunicada y la usan consistentemente','Sí, la conocen pero la aplican de forma inconsistente','Más o menos; cada vendedor lo explica a su manera','No está bien definida ni comunicada'], pesos:[4,3,2,1]},
+  {dim:'rol_comercial', texto:'¿Participás activamente en la formación y desarrollo comercial de tu equipo?',
+   opciones:['Sí, con reuniones periódicas de feedback y entrenamiento','Sí, de vez en cuando cuando veo que algo falla','Poco; confío en que cada uno se desarrolle solo','No; la capacitación no es algo que priorice'], pesos:[4,3,2,1]},
+
+  // ── FINANZAS ──
+  {dim:'finanzas', texto:'¿Sabés cuál es el margen neto de tus principales líneas de producto o servicio?',
+   opciones:['Sí, tengo los márgenes por línea actualizados','Sí, aproximadamente, aunque no con precisión','Lo calculé alguna vez pero no lo tengo claro hoy','No lo sé con certeza'], pesos:[4,3,2,1]},
+  {dim:'finanzas', texto:'¿Tenés claro cuál es el punto de equilibrio (break-even) de tu empresa?',
+   opciones:['Sí, lo tengo calculado y lo monitoreo','Lo sé aproximadamente','Lo calculé pero no lo monitoreo regularmente','No lo tengo calculado'], pesos:[4,3,2,1]},
+  {dim:'finanzas', texto:'¿Cómo gestionás la cobranza en tu empresa?',
+   opciones:['Sistema claro con políticas, seguimiento y alertas automáticas','Proceso informal pero consistente; seguimos los vencimientos','El equipo lo maneja y yo me entero cuando hay problemas','Es un punto débil; tenemos problemas de cobranza frecuentes'], pesos:[4,3,2,1]},
+  {dim:'finanzas', texto:'¿Usás proyecciones de ventas para planificar el flujo de caja?',
+   opciones:['Sí, con proyecciones formales que reviso mensualmente','Sí, pero de forma informal','Poco; reacciono según lo que entra','No, gestiono el dinero cuando llega'], pesos:[4,3,2,1]},
+];
+
+// ── BG CANVAS ──
+(function(){
+  const c=document.getElementById('bg-canvas'),ctx=c.getContext('2d');
+  let W,H,pts;
+  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
+  function init(){pts=Array.from({length:100},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.04,vy:(Math.random()-.5)*.04,r:Math.random()*.8+.1,op:Math.random()*.35+.05,gold:Math.random()<.1}))}
+  let t=0;
+  function draw(){ctx.clearRect(0,0,W,H);t+=.005;
+    pts.forEach(p=>{const a=p.op*(0.5+0.5*Math.sin(t+p.r));ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.gold?`rgba(212,175,55,${a*1.2})`:`rgba(240,235,220,${a*.5})`;ctx.fill();p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;});
+    requestAnimationFrame(draw);}
+  resize();init();draw();window.addEventListener('resize',()=>{resize();init();});
+})();
+
+// ── HELPERS ──
+const setLoad=(msg,pct)=>{document.getElementById('load-msg').textContent=msg;document.getElementById('load-bar').style.width=pct+'%'};
+const showScreen=id=>{['screen-access','screen-exam','screen-result'].forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id))};
+const hideLoad=()=>{const ov=document.getElementById('load-overlay');ov.style.opacity='0';setTimeout(()=>ov.classList.add('hidden'),400)};
+const sbFetch=(table,method,body,query='')=>fetch(`${SB_URL}/rest/v1/${table}${query}`,{method,headers:SB_H,...(body?{body:JSON.stringify(body)}:{})}).then(r=>r.json());
+
+async function init(){
+  setLoad('Cargando configuración...',30);
+  ANTHROPIC_KEY=localStorage.getItem('METO_anthropic_key')||'';
+  if(!ANTHROPIC_KEY||!ANTHROPIC_KEY.startsWith('sk-')){
+    try{
+      const timeout = new Promise((_,rej)=>setTimeout(()=>rej('timeout'),3000));
+      const cfg = await Promise.race([
+        sbFetch('sueldos_config','GET',null,'?key=eq.anthropic_api_key'),
+        timeout
+      ]);
+      if(cfg&&cfg[0]?.data?.key)ANTHROPIC_KEY=cfg[0].data.key;
+    }catch(e){}
+  }
+  setLoad('Listo',100);
+  const params=new URLSearchParams(window.location.search);
+  const tok=params.get('examen_token');
+  if(tok&&tok.length>=4){document.getElementById('code-input').value=tok.toUpperCase();hideLoad();showScreen('screen-access');setTimeout(()=>verificarCodigo(),400);return;}
+  hideLoad();showScreen('screen-access');
+  setTimeout(()=>document.getElementById('code-input').focus(),500);
+}
+
+async function verificarCodigo(){
+  const input=document.getElementById('code-input');
+  const errEl=document.getElementById('access-error');
+  const btn=document.getElementById('btn-access');
+  const codigo=input.value.trim().toUpperCase();
+  errEl.textContent='';
+  if(codigo.length<4){errEl.textContent='El código debe tener al menos 4 caracteres';input.classList.add('error');setTimeout(()=>input.classList.remove('error'),500);return;}
+  btn.disabled=true;btn.textContent='Verificando...';
+  try{
+    let data=null;
+    const res=await sbFetch('examen_codigos','GET',null,`?codigo=eq.${codigo}&activo=eq.true`);
+    if(Array.isArray(res)&&res.length>0)data=res[0];
+    if(!data){const cache=JSON.parse(localStorage.getItem('bpc_exam_codigos')||'[]');const local=cache.find(c=>c.codigo===codigo&&c.activo!==false);if(local)data=local;}
+    if(!data){errEl.textContent='❌ Código no encontrado.';input.classList.add('error');setTimeout(()=>input.classList.remove('error'),500);btn.disabled=false;btn.textContent='Comenzar diagnóstico →';return;}
+    if(data.usado){errEl.textContent='⚠️ Este código ya fue utilizado.';btn.disabled=false;btn.textContent='Comenzar diagnóstico →';return;}
+    // Validar tipo: debe ser dueno o diagnostico_dueno
+    if(data.tipo && !data.tipo.includes('dueno') && data.tipo !== 'diagnostico_dueno'){
+      errEl.textContent='⚠️ Este código no corresponde al diagnóstico de dueño/director.';btn.disabled=false;btn.textContent='Comenzar diagnóstico →';return;
+    }
+    codigoData=data;iniciarExamen();
+  }catch(e){errEl.textContent='❌ Error de conexión.';btn.disabled=false;btn.textContent='Comenzar diagnóstico →';}
+}
+document.getElementById('code-input').addEventListener('keydown',e=>{if(e.key==='Enter')verificarCodigo()});
+
+function iniciarExamen(){
+  document.getElementById('exam-empresa-label').textContent=codigoData.empresa||'';
+  qActual=0;respuestas={};showScreen('screen-exam');renderQ();
+}
+
+function renderQ(){
+  const q=PREGUNTAS[qActual];const total=PREGUNTAS.length;
+  const dim=DIMS.find(d=>d.id===q.dim);
+  document.getElementById('q-dim').textContent=dim?.label||'';
+  document.getElementById('q-counter').textContent=`Pregunta ${qActual+1} de ${total}`;
+  document.getElementById('exam-counter-label').textContent=`Pregunta ${qActual+1} de ${total}`;
+  document.getElementById('exam-dim-label').textContent=dim?.label||'';
+  document.getElementById('q-text').textContent=q.texto;
+  document.getElementById('progress-fill').style.width=((qActual/total)*100)+'%';
+  const optsEl=document.getElementById('q-options');
+  optsEl.innerHTML=q.opciones.map((op,i)=>`<button class="q-option${respuestas[qActual]===i?' selected':''}" onclick="seleccionar(${i})">${op}</button>`).join('');
+  document.getElementById('btn-prev').disabled=qActual===0;
+  const isLast=qActual===total-1;
+  const btnNext=document.getElementById('btn-next');
+  btnNext.textContent=isLast?'Finalizar diagnóstico ✓':'Siguiente →';
+  document.getElementById('nav-info').textContent=`${Object.keys(respuestas).length}/${total} respondidas`;
+}
+
+function seleccionar(i){
+  respuestas[qActual]=i;
+  document.querySelectorAll('.q-option').forEach((el,j)=>el.classList.toggle('selected',j===i));
+  document.getElementById('nav-info').textContent=`${Object.keys(respuestas).length}/${PREGUNTAS.length} respondidas`;
+}
+function prevQ(){if(qActual>0){qActual--;renderQ();}}
+function nextQ(){
+  if(qActual<PREGUNTAS.length-1){qActual++;renderQ();}
+  else{
+    const faltantes=PREGUNTAS.length-Object.keys(respuestas).length;
+    if(faltantes>0&&!confirm(`Faltan ${faltantes} pregunta${faltantes>1?'s':''} sin responder. ¿Finalizar igual?`))return;
+    finalizarExamen();
+  }
+}
+
+async function finalizarExamen(){
+  // ── Mostrar agradecimiento ──
+  showScreen('screen-result');
+
+  // ── Calcular por dimensión ──
+  const scoresDim={};
+  DIMS.forEach(d=>{scoresDim[d.id]={suma:0,max:0}});
+  PREGUNTAS.forEach((q,i)=>{
+    const sel=respuestas[i]??-1;
+    const peso=sel>=0?(q.pesos[sel]||1):0;
+    const maxPeso=Math.max(...q.pesos);
+    scoresDim[q.dim].suma+=peso;
+    scoresDim[q.dim].max+=maxPeso;
+  });
+  DIMS.forEach(d=>{const s=scoresDim[d.id];s.pct=s.max>0?Math.round(s.suma/s.max*100):0;});
+  const totalSuma=DIMS.reduce((s,d)=>s+scoresDim[d.id].suma,0);
+  const totalMax=DIMS.reduce((s,d)=>s+scoresDim[d.id].max,0);
+  const scoreGlobal=Math.round(totalSuma/totalMax*100);
+  const nivel=scoreGlobal>=75?'ESTRATÉGICO':scoreGlobal>=55?'GESTIONADO':scoreGlobal>=35?'EN DESARROLLO':'REACTIVO';
+
+  // ── Guardar en Supabase ──
+  const payload={
+    codigo:codigoData.codigo,nombre:codigoData.nombre,empresa:codigoData.empresa,
+    tipo:'diagnostico_dueno',auditoria_id:codigoData.auditoriaId||codigoData.auditoria_id||null,
+    score:scoreGlobal,nivel,correctas:null,total:PREGUNTAS.length,
+    areas:JSON.stringify(scoresDim),respuestas:JSON.stringify(respuestas),
+    fecha:new Date().toISOString(),informe_ia:null,informe_ia_fecha:null,
+  };
+  let resultadoId=null;
+  try{
+    const ins=await fetch(`${SB_URL}/rest/v1/examen_resultados`,{method:'POST',headers:SB_H,body:JSON.stringify(payload)});
+    const insData=await ins.json();
+    if(Array.isArray(insData)&&insData[0]?.id)resultadoId=insData[0].id;
+    await marcarUsado(codigoData.codigo);
+  }catch(e){console.error(e);}
+
+  // ── Informe IA en background ──
+  generarInformeIA(payload,resultadoId,scoresDim,scoreGlobal,nivel);
+}
+
+async function marcarUsado(codigo){
+  try{await fetch(`${SB_URL}/rest/v1/examen_codigos?codigo=eq.${codigo}`,{method:'PATCH',headers:SB_H,body:JSON.stringify({usado:true,fecha_uso:new Date().toISOString()})});}catch(e){}
+  try{const cache=JSON.parse(localStorage.getItem('bpc_exam_codigos')||'[]');const idx=cache.findIndex(c=>c.codigo===codigo);if(idx>-1){cache[idx].usado=true;localStorage.setItem('bpc_exam_codigos',JSON.stringify(cache));}}catch(e){}
+}
+
+async function generarInformeIA(payload,resultadoId,scoresDim,scoreGlobal,nivel){
+  const loadEl=document.getElementById('informe-loading');
+  const contEl=document.getElementById('informe-content');
+  if(!ANTHROPIC_KEY||!ANTHROPIC_KEY.startsWith('sk-')){loadEl.innerHTML='<span style="color:var(--muted);font-size:11px">Informe IA no disponible</span>';return;}
+
+  const dimsTexto=DIMS.map(d=>`${d.label}: ${scoresDim[d.id].pct}%`).join('\n');
+  const prompt=`Sos un consultor senior de MetoGroup Latam. Analizás el diagnóstico de liderazgo comercial de un dueño/director de empresa.
+
+DATOS:
+Evaluado: ${payload.nombre}
+Empresa: ${payload.empresa}
+Score global: ${scoreGlobal}% — Perfil: ${nivel}
+
+RESULTADOS POR DIMENSIÓN:
+${dimsTexto}
+
+Generá un diagnóstico ejecutivo con EXACTAMENTE esta estructura en texto plano sin markdown:
+
+PERFIL DIRECTIVO
+[2 oraciones describiendo el perfil comercial de este dueño/director basado en los scores. Directo y concreto.]
+
+DIMENSIONES FUERTES
+[Las 2 dimensiones con mayor score. Una oración por dimensión explicando qué implica para el negocio.]
+
+BRECHAS CRÍTICAS
+[Las 2 dimensiones más bajas. Una oración por dimensión con el impacto concreto en el negocio.]
+
+RECOMENDACIÓN ESTRATÉGICA
+[1 párrafo con las 2-3 acciones más urgentes que este dueño debería encarar para mejorar su liderazgo comercial.]
+
+Tono: directo, sin condescendencia, español rioplatense, orientado a resultados. Máximo 200 palabras.`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();const texto=data.content?.[0]?.text||'';
+    if(texto){
+      loadEl.style.display='none';contEl.style.display='block';
+      contEl.innerHTML=texto.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+        if(l.match(/^(PERFIL DIRECTIVO|DIMENSIONES FUERTES|BRECHAS CRÍTICAS|RECOMENDACIÓN ESTRATÉGICA)/i))
+          return `<div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);margin:12px 0 5px;font-weight:700">${l}</div>`;
+        return `<div style="margin-bottom:5px">${l}</div>`;
+      }).join('');
+      if(resultadoId){try{await fetch(`${SB_URL}/rest/v1/examen_resultados?id=eq.${resultadoId}`,{method:'PATCH',headers:SB_H,body:JSON.stringify({informe_ia:texto,informe_ia_fecha:new Date().toISOString()})});}catch(e){}}
+    }
+  }catch(e){loadEl.innerHTML='<span style="color:var(--muted);font-size:11px">No se pudo generar el análisis.</span>';}
+}
+
+init();
+</script>
+</body>
+</html>
