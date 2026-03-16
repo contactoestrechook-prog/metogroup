@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examen BPC:2026 — MetoGroup</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080808;--surface:#141410;--surface2:#1c1a14;--surface3:#242018;
+  --border:rgba(212,175,55,0.18);--accent:#d4af37;--accent2:#f5d060;--accent3:#b8922e;
+  --danger:#ef4444;--warn:#f59e0b;--text:#f0e8d0;--muted:#8a7a5a;
+  --gold:#d4af37;--gold-dim:rgba(212,175,55,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes barFill{from{width:0}to{width:var(--target-w)}}
+
+/* CANVAS BG */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.6}
+
+/* SCREENS */
+.screen{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:24px;transition:opacity .4s,transform .4s}
+.screen.hidden{opacity:0;pointer-events:none;transform:translateY(20px)}
+
+/* ── ACCESS SCREEN ── */
+.access-card{
+  width:420px;max-width:95vw;
+  background:linear-gradient(160deg,rgba(28,26,18,.97),rgba(20,18,12,.99));
+  border:1px solid rgba(212,175,55,.22);
+  border-radius:20px;
+  padding:40px 36px;
+  text-align:center;
+  animation:fadeUp .8s cubic-bezier(.22,1,.36,1) both;
+  box-shadow:0 40px 100px rgba(0,0,0,.7),0 0 0 1px rgba(212,175,55,.06);
+}
+.brand{
+  font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(120deg,#8a6a1a 0%,#c9a84c 25%,#f0d060 45%,#fff8e0 55%,#f0d060 65%,#c9a84c 80%,#8a6a1a 100%);
+  background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:shimmer 6s linear infinite;margin-bottom:4px;
+}
+.brand-sub{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:32px}
+.access-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:8px}
+.access-desc{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:28px}
+
+.code-input-wrap{position:relative;margin-bottom:16px}
+.code-input{
+  width:100%;background:rgba(0,0,0,.4);border:1.5px solid rgba(212,175,55,.25);
+  border-radius:12px;padding:16px 20px;
+  font-family:'Syne',sans-serif;font-size:2rem;font-weight:900;
+  letter-spacing:8px;text-align:center;text-transform:uppercase;
+  color:var(--accent2);outline:none;transition:border-color .2s,box-shadow .2s;
+}
+.code-input:focus{border-color:rgba(212,175,55,.6);box-shadow:0 0 0 3px rgba(212,175,55,.08)}
+.code-input::placeholder{color:rgba(212,175,55,.2);letter-spacing:4px}
+.code-input.error{border-color:var(--danger);animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.btn-access{
+  width:100%;padding:14px;border:none;border-radius:12px;cursor:pointer;
+  background:linear-gradient(135deg,rgba(200,168,74,.25),rgba(200,168,74,.12));
+  border:1px solid rgba(200,168,74,.35);color:var(--accent2);
+  font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;
+  transition:all .2s;text-transform:uppercase;
+}
+.btn-access:hover{background:linear-gradient(135deg,rgba(200,168,74,.35),rgba(200,168,74,.2));transform:translateY(-1px);box-shadow:0 6px 24px rgba(200,168,74,.15)}
+.btn-access:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.access-error{font-size:11px;color:var(--danger);margin-top:8px;min-height:18px}
+.access-hint{font-size:10px;color:var(--muted);margin-top:16px;line-height:1.5}
+
+/* ── EXAM SCREEN ── */
+.exam-wrap{
+  width:740px;max-width:96vw;
+  animation:fadeUp .6s cubic-bezier(.22,1,.36,1) both;
+}
+.exam-header{
+  background:linear-gradient(160deg,rgba(28,26,18,.97),rgba(20,18,12,.99));
+  border:1px solid rgba(212,175,55,.18);border-radius:16px 16px 0 0;
+  padding:20px 28px;display:flex;align-items:center;justify-content:space-between;
+}
+.exam-brand{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--accent)}
+.exam-meta{font-size:10px;color:var(--muted);text-align:right}
+.exam-progress-bar{
+  height:3px;background:rgba(212,175,55,.1);
+  border-radius:0;overflow:hidden;
+}
+.exam-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent3),var(--accent2));transition:width .5s cubic-bezier(.4,0,.2,1);width:0%}
+
+.exam-body{
+  background:linear-gradient(160deg,rgba(22,20,14,.98),rgba(16,14,10,.99));
+  border:1px solid rgba(212,175,55,.18);border-top:none;
+  padding:32px 36px;min-height:360px;
+  display:flex;flex-direction:column;
+}
+.q-section-label{
+  font-size:9px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--accent3);margin-bottom:6px;
+}
+.q-counter{font-size:11px;color:var(--muted);margin-bottom:20px}
+.q-text{
+  font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:600;
+  line-height:1.55;color:var(--text);margin-bottom:28px;flex:1;
+}
+.q-options{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+.q-option{
+  background:rgba(255,255,255,.03);border:1px solid rgba(212,175,55,.12);
+  border-radius:10px;padding:13px 18px;cursor:pointer;
+  font-size:13px;line-height:1.5;color:var(--text);
+  transition:all .15s;text-align:left;position:relative;overflow:hidden;
+}
+.q-option:hover{background:rgba(212,175,55,.07);border-color:rgba(212,175,55,.3);transform:translateX(3px)}
+.q-option.selected{background:rgba(212,175,55,.12);border-color:rgba(212,175,55,.5);color:var(--accent2)}
+.q-option.correct{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.4);color:#86efac}
+.q-option.wrong{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:#fca5a5}
+.q-option.reveal{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.2);color:#86efac}
+
+.exam-nav{display:flex;justify-content:space-between;align-items:center;padding-top:16px;border-top:1px solid rgba(212,175,55,.08)}
+.btn-nav{
+  padding:10px 24px;border:1px solid rgba(212,175,55,.25);border-radius:8px;
+  background:transparent;color:var(--muted);cursor:pointer;font-size:12px;
+  font-family:'Syne',sans-serif;font-weight:600;transition:all .15s;
+}
+.btn-nav:hover:not(:disabled){border-color:rgba(212,175,55,.5);color:var(--accent);background:rgba(212,175,55,.06)}
+.btn-nav:disabled{opacity:.3;cursor:not-allowed}
+.btn-nav.primary{
+  background:linear-gradient(135deg,rgba(200,168,74,.2),rgba(200,168,74,.1));
+  border-color:rgba(200,168,74,.35);color:var(--accent2);
+}
+.btn-nav.primary:hover{background:linear-gradient(135deg,rgba(200,168,74,.3),rgba(200,168,74,.18));box-shadow:0 4px 16px rgba(200,168,74,.12)}
+
+/* ── RESULT SCREEN ── */
+.result-card{
+  width:680px;max-width:96vw;
+  background:linear-gradient(160deg,rgba(28,26,18,.97),rgba(20,18,12,.99));
+  border:1px solid rgba(212,175,55,.22);border-radius:20px;
+  overflow:hidden;animation:fadeUp .7s cubic-bezier(.22,1,.36,1) both;
+}
+.result-head{
+  padding:32px 36px 28px;border-bottom:1px solid rgba(212,175,55,.1);
+  background:linear-gradient(160deg,rgba(36,32,18,.6),transparent);
+}
+.result-score-ring{
+  width:96px;height:96px;border-radius:50%;
+  border:4px solid var(--accent3);
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(212,175,55,.06);margin:0 auto 20px;
+  position:relative;
+}
+.result-score-num{
+  font-family:'Syne',sans-serif;font-size:2rem;font-weight:900;color:var(--accent2);
+}
+.result-nivel{
+  display:inline-block;padding:4px 16px;border-radius:20px;
+  font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  margin:0 auto 8px;
+}
+.result-name{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;text-align:center;margin-bottom:4px}
+.result-empresa{font-size:12px;color:var(--muted);text-align:center;margin-bottom:0}
+
+.result-body{padding:28px 36px}
+.areas-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.area-item{}
+.area-label{font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px}
+.area-bar{height:6px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:3px}
+.area-fill{height:100%;border-radius:99px;transition:width 1s cubic-bezier(.4,0,.2,1) .3s}
+.area-pct{font-size:11px;font-weight:700}
+
+.informe-section{
+  background:rgba(212,175,55,.04);border:1px solid rgba(212,175,55,.12);
+  border-radius:12px;padding:20px;margin-top:16px;
+}
+.informe-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);margin-bottom:10px}
+.informe-content{font-size:12px;line-height:1.7;color:rgba(240,232,208,.8)}
+.informe-loading{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.spinner{width:14px;height:14px;border:2px solid rgba(212,175,55,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+
+.result-footer{padding:0 36px 28px;display:flex;gap:12px}
+.btn-result{
+  flex:1;padding:12px;border-radius:10px;cursor:pointer;font-size:12px;
+  font-family:'Syne',sans-serif;font-weight:700;transition:all .15s;letter-spacing:.5px;
+}
+.btn-result.secondary{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:var(--muted)}
+.btn-result.secondary:hover{border-color:rgba(212,175,55,.3);color:var(--accent)}
+.btn-result.primary{
+  background:linear-gradient(135deg,rgba(200,168,74,.2),rgba(200,168,74,.1));
+  border:1px solid rgba(200,168,74,.35);color:var(--accent2);
+}
+
+/* LOADING OVERLAY */
+#load-overlay{
+  position:fixed;inset:0;z-index:999;
+  background:rgba(8,8,8,.95);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  transition:opacity .4s;
+}
+#load-overlay.hidden{opacity:0;pointer-events:none}
+.load-icon{font-size:28px;animation:pulse 1.5s ease-in-out infinite}
+.load-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--accent)}
+.load-msg{font-size:12px;color:var(--muted)}
+.load-bar-wrap{width:260px;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.load-bar{height:100%;background:linear-gradient(90deg,var(--accent3),var(--accent2));border-radius:2px;transition:width .4s}
+
+/* TOP LINE */
+.top-rule{position:fixed;top:0;left:0;right:0;height:1px;z-index:100;background:linear-gradient(90deg,transparent 0%,rgba(212,175,55,.6) 35%,rgba(255,215,80,.9) 50%,rgba(212,175,55,.6) 65%,transparent 100%)}
+</style>
+</head>
+<body>
+<div class="top-rule"></div>
+<canvas id="bg-canvas"></canvas>
+
+<!-- LOADING -->
+<div id="load-overlay">
+  <div class="load-icon">⬡</div>
+  <div class="load-title">MetoGroup</div>
+  <div class="load-msg" id="load-msg">Verificando acceso...</div>
+  <div class="load-bar-wrap"><div class="load-bar" id="load-bar" style="width:15%"></div></div>
+</div>
+
+<!-- SCREEN 1: ACCESO -->
+<div class="screen hidden" id="screen-access">
+  <div class="access-card">
+    <div class="brand">MetoGroup</div>
+    <div class="brand-sub">BPC:2026 · Examen de Competencias</div>
+    <div class="access-title">Ingresá tu código de acceso</div>
+    <div class="access-desc">Tu supervisor te envió un código único de 6 caracteres. Ingresalo para comenzar el examen.</div>
+    <div class="code-input-wrap">
+      <input class="code-input" id="code-input" maxlength="6" placeholder="XXXXXX" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="access-error" id="access-error"></div>
+    <button class="btn-access" id="btn-access" onclick="verificarCodigo()">Acceder al examen →</button>
+    <div class="access-hint">El código es de un solo uso y fue asignado específicamente para vos. No lo compartas.</div>
+  </div>
+</div>
+
+<!-- SCREEN 2: EXAMEN -->
+<div class="screen hidden" id="screen-exam">
+  <div class="exam-wrap">
+    <div class="exam-header">
+      <div>
+        <div class="exam-brand">MetoGroup — Examen BPC:2026</div>
+        <div id="exam-empresa-label" style="font-size:10px;color:var(--muted);margin-top:2px"></div>
+      </div>
+      <div class="exam-meta">
+        <div id="exam-counter-label">Pregunta 1 de 30</div>
+        <div id="exam-section-label" style="color:var(--accent3);margin-top:2px"></div>
+      </div>
+    </div>
+    <div class="exam-progress-bar">
+      <div class="exam-progress-fill" id="exam-progress-fill"></div>
+    </div>
+    <div class="exam-body">
+      <div class="q-section-label" id="q-section"></div>
+      <div class="q-counter" id="q-counter"></div>
+      <div class="q-text" id="q-text"></div>
+      <div class="q-options" id="q-options"></div>
+      <div class="exam-nav">
+        <button class="btn-nav" id="btn-prev" onclick="prevQ()">← Anterior</button>
+        <span id="nav-info" style="font-size:11px;color:var(--muted)"></span>
+        <button class="btn-nav primary" id="btn-next" onclick="nextQ()">Siguiente →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 3: AGRADECIMIENTO -->
+<div class="screen hidden" id="screen-result">
+  <div class="access-card" style="max-width:480px;padding:48px 40px">
+    <div class="brand">MetoGroup</div>
+    <div class="brand-sub">BPC:2026 · Examen de Competencias</div>
+    <div style="font-size:48px;margin:24px 0 16px">✅</div>
+    <div style="font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:700;color:var(--text);margin-bottom:16px">
+      ¡Gracias por completar el cuestionario!
+    </div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:32px">
+      Tus respuestas fueron registradas correctamente y serán analizadas por el equipo MetoGroup.<br><br>
+      Podés cerrar esta ventana.
+    </div>
+    <div style="width:100%;height:1px;background:var(--border);margin-bottom:24px"></div>
+    <div style="font-size:10px;color:var(--muted);letter-spacing:1px">
+      MetoGroup Latam S.A. · BPC:2026
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════
+const SB_URL  = 'https://smcghyecpzzimadtuern.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtY2doeWVjcHp6aW1hZHR1ZXJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzODYwMTksImV4cCI6MjA4Nzk2MjAxOX0.u9OgCRMPFnuNLq4UinR1idpRykVF_VKPwIvFXgttVOw';
+const SB_H    = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
+const TIPO    = 'vendedor';  // este archivo = vendedores
+
+let ANTHROPIC_KEY = '';
+let codigoData    = null;   // {codigo, nombre, empresa, tipo, auditoriaId, id}
+let respuestas    = {};     // {qIdx: optIdx}
+let qActual       = 0;
+
+// ═══════════════════════════════════════════════════════
+//  PREGUNTAS — 35 preguntas, 7 áreas x 5 preguntas
+// ═══════════════════════════════════════════════════════
+const AREAS = [
+  { id:'cierre',        label:'Técnicas de Cierre' },
+  { id:'objeciones',    label:'Manejo de Objeciones' },
+  { id:'negociacion',   label:'Negociación' },
+  { id:'etica',         label:'Ética Comercial' },
+  { id:'comunicacion',  label:'Comunicación y Presentación' },
+  { id:'gestion',       label:'Gestión y Autoadministración' },
+  { id:'redes',         label:'Redes Sociales y Presencia Digital' },
+];
+
+const PREGUNTAS = [
+  // ── CIERRE ──────────────────────────────────────────
+  { area:'cierre', texto:'Un cliente dice "necesito pensarlo". ¿Cuál es la respuesta más efectiva?',
+    opciones:[
+      'Dejar que lo piense y volver a llamar la semana próxima',
+      'Preguntar qué es específicamente lo que necesita evaluar antes de decidir',
+      'Insistir en que la oferta vence hoy',
+      'Enviar más información por email sin hacer seguimiento'
+    ], correcta:1 },
+  { area:'cierre', texto:'Un cliente mostró interés durante toda la reunión pero al final dice "igual no sé si es el momento". ¿Qué hacés?',
+    opciones:[
+      'Agradecés y te retirás para no presionarlo',
+      'Preguntás qué tendría que pasar para que sea el momento correcto',
+      'Le ofrecés un descuento para que decida ahora',
+      'Le enviás un email resumen y esperás que te contacte'
+    ], correcta:1 },
+  { area:'cierre', texto:'En una reunión de ventas, el momento más adecuado para intentar el cierre es:',
+    opciones:[
+      'Siempre al final, nunca antes',
+      'Cuando el cliente muestra señales de compra verbales o no verbales',
+      'Después de presentar todas las características del producto',
+      'Cuando el cliente pide descuento'
+    ], correcta:1 },
+  { area:'cierre', texto:'Le presentaste una propuesta a un cliente hace 5 días y no respondió. ¿Qué hacés?',
+    opciones:[
+      'Esperás otra semana para no parecer desesperado',
+      'Le enviás un email preguntando si tuvo novedades y ofrecés resolver dudas',
+      'Llamás directamente y le preguntás si va a comprar o no',
+      'Mandás una propuesta nueva con precio más bajo para motivarlo'
+    ], correcta:1 },
+  { area:'cierre', texto:'Después de un cierre exitoso, ¿qué debe hacer el vendedor?',
+    opciones:[
+      'Seguir presentando características del producto para reforzar la decisión',
+      'Dejar de hablar de ventas y confirmar los pasos siguientes',
+      'Intentar vender más productos de inmediato',
+      'Pedir referidos antes de que firmen'
+    ], correcta:1 },
+
+  // ── OBJECIONES ──────────────────────────────────────
+  { area:'objeciones', texto:'"Tu precio es más caro que la competencia." ¿Cuál es la mejor primera respuesta?',
+    opciones:[
+      'Bajar el precio de inmediato para no perder la venta',
+      'Atacar a la competencia señalando sus debilidades',
+      'Reconocer la objeción y preguntar qué está comparando exactamente',
+      'Ignorar la objeción y seguir con la presentación'
+    ], correcta:2 },
+  { area:'objeciones', texto:'Cuando un cliente pone objeciones, lo más útil es interpretarlas como:',
+    opciones:[
+      'Señales de que no va a comprar y hay que pasar al siguiente prospecto',
+      'Preguntas disfrazadas que indican interés y necesidad de más información',
+      'Intentos de bajar el precio',
+      'Problemas que hay que resolver antes de poder avanzar'
+    ], correcta:1 },
+  { area:'objeciones', texto:'Un cliente objeta repetidamente el mismo punto aunque ya lo respondiste. Esto probablemente significa:',
+    opciones:[
+      'Que no entendió tu respuesta y hay que explicarlo más claro',
+      'Que esa objeción no fue realmente resuelta para él',
+      'Que quiere un descuento y está usando la objeción como excusa',
+      'Que está comparando con otro proveedor'
+    ], correcta:1 },
+  { area:'objeciones', texto:'Un cliente dice "necesito consultarlo con mi socio". Antes de terminar la reunión, lo correcto es:',
+    opciones:[
+      'Cerrar la reunión y esperar que se comuniquen',
+      'Preguntar si podés participar de esa conversación o enviar algo que les sea útil',
+      'Dejar una propuesta escrita y no hacer más seguimiento',
+      'Insistir en que tome la decisión él solo'
+    ], correcta:1 },
+  { area:'objeciones', texto:'El cliente dice "no tenemos presupuesto ahora". ¿Cuál es la respuesta más inteligente?',
+    opciones:[
+      'Ofrecer un descuento del 20% para que entre en presupuesto',
+      'Preguntar cuándo se renueva el presupuesto y acordar un seguimiento para ese momento',
+      'Explicar por qué el producto es una inversión que se paga sola',
+      'Pasar al siguiente cliente y descartarlo'
+    ], correcta:1 },
+
+  // ── NEGOCIACIÓN ─────────────────────────────────────
+  { area:'negociacion', texto:'Antes de entrar a una negociación de precio, ¿qué información es más valiosa tener?',
+    opciones:[
+      'Una lista de argumentos para defender cada característica del producto',
+      'Qué alternativas tiene el cliente si no cierra con vos',
+      'El presupuesto máximo que tiene el cliente',
+      'El descuento máximo que te autorizó el gerente'
+    ], correcta:1 },
+  { area:'negociacion', texto:'El cliente pide un 20% de descuento. Tu límite autorizado es el 10%. ¿Qué hacés?',
+    opciones:[
+      'Ofrecés el 10% de inmediato para cerrar rápido',
+      'Rechazás sin dar alternativas',
+      'Preguntás qué lo llevaría a decidirse sin necesitar ese descuento',
+      'Ofrecés 15% y esperás que acepte'
+    ], correcta:2 },
+  { area:'negociacion', texto:'En una negociación que va bien para ambas partes, ¿cuál es el mejor resultado posible?',
+    opciones:[
+      'Que el cliente ceda en precio y vos en plazo de entrega',
+      'Que ambas partes sientan que obtuvieron algo valioso del acuerdo',
+      'Que el vendedor ceda lo menos posible',
+      'Que el cliente quede contento aunque vos pierdas margen'
+    ], correcta:1 },
+  { area:'negociacion', texto:'Estás negociando y el cliente larga un silencio largo después de que le decís el precio. ¿Qué hacés?',
+    opciones:[
+      'Apurás a llenar el silencio ofreciendo una mejora',
+      'Esperás tranquilo; el silencio no es una señal de rechazo',
+      'Aclarás que el precio ya tiene el máximo descuento posible',
+      'Preguntás directamente si le parece caro'
+    ], correcta:1 },
+  { area:'negociacion', texto:'¿En qué momento tiene más sentido hacer una concesión en precio?',
+    opciones:[
+      'Al principio, para mostrar buena voluntad y generar confianza',
+      'Cuando el cliente amenaza con irse con la competencia',
+      'Cuando entendés qué necesita el cliente a cambio de esa concesión',
+      'Al final, como cierre, sin pedir nada a cambio'
+    ], correcta:2 },
+
+  // ── ÉTICA ────────────────────────────────────────────
+  { area:'etica', texto:'Un cliente te pide información de otro cliente tuyo que él conoce del sector. ¿Qué hacés?',
+    opciones:[
+      'La compartís si te ayuda a cerrar la venta',
+      'No la compartís; la información de clientes es confidencial siempre',
+      'Compartís solo datos generales sin información sensible',
+      'Le decís que le preguntés primero al otro cliente'
+    ], correcta:1 },
+  { area:'etica', texto:'Tras hacer el diagnóstico, te das cuenta que tu producto no es la mejor opción para ese cliente. ¿Qué hacés?',
+    opciones:[
+      'Lo vendés igual; el cliente decidirá si funciona',
+      'Se lo decís honestamente, aunque pierdas la venta',
+      'Ajustás el diagnóstico para que tu producto encaje',
+      'Ofrecés más garantías para compensar las limitaciones'
+    ], correcta:1 },
+  { area:'etica', texto:'Le prometiste a un cliente una fecha de entrega que después no pudiste cumplir. ¿Qué hacés?',
+    opciones:[
+      'Esperás a que el cliente pregunte para no crear alarma innecesaria',
+      'Avisás proactivamente, explicás la causa y ofrecés una solución concreta',
+      'Buscás una excusa razonable para justificar el retraso',
+      'Le pedís al cliente que sea más flexible con los plazos'
+    ], correcta:1 },
+  { area:'etica', texto:'Un colega tuyo está exagerando las capacidades del producto con los clientes para cerrar más ventas. ¿Qué hacés?',
+    opciones:[
+      'Nada; cada uno tiene su estilo de venta',
+      'Hacés lo mismo para no quedar en desventaja en el ranking',
+      'Lo hablás con él directamente o lo reportás al supervisor',
+      'Le avisás a los clientes afectados en privado'
+    ], correcta:2 },
+  { area:'etica', texto:'Un cliente activo te manda un regalo de alto valor por las fiestas. ¿Qué hacés?',
+    opciones:[
+      'Lo aceptás; es parte de la relación comercial',
+      'Lo rechazás siempre sin importar el contexto',
+      'Consultás la política de la empresa y actuás en consecuencia',
+      'Lo aceptás pero no lo mencionás internamente'
+    ], correcta:2 },
+
+  // ── COMUNICACIÓN ────────────────────────────────────
+  { area:'comunicacion', texto:'Al presentar una propuesta, ¿por dónde conviene empezar?',
+    opciones:[
+      'Por las características técnicas del producto para mostrar solidez',
+      'Por el problema o necesidad del cliente, antes de hablar del producto',
+      'Por la historia y trayectoria de la empresa para generar confianza',
+      'Por el precio para que el cliente vea que es accesible'
+    ], correcta:1 },
+  { area:'comunicacion', texto:'El cliente habla durante 5 minutos sin parar. ¿Qué hacés?',
+    opciones:[
+      'Escuchás sin interrumpir y tomás nota de los puntos clave',
+      'Lo interrumpís amablemente cuando ves una oportunidad de hablar del producto',
+      'Escuchás pero empezás a preparar mentalmente tu respuesta',
+      'Esperás que termine y seguís con tu presentación preparada'
+    ], correcta:0 },
+  { area:'comunicacion', texto:'Para mostrar el valor de lo que vendés sin hablar de precio, la mejor estrategia es:',
+    opciones:[
+      'Listar todas las características técnicas disponibles',
+      'Comparar tu oferta con la de la competencia punto a punto',
+      'Traducir cada característica en un resultado concreto para ese cliente',
+      'Mencionar el precio de lista y después aplicar el descuento'
+    ], correcta:2 },
+  { area:'comunicacion', texto:'Un cliente está visiblemente molesto porque tuvo un problema con la entrega. ¿Por dónde empezás?',
+    opciones:[
+      'Explicás de inmediato qué salió mal y quién tuvo la culpa',
+      'Reconocés su molestia y le mostrás que entendés la situación antes de explicar',
+      'Derivás al área de atención al cliente para no involucrarte',
+      'Ofrecés un descuento en la próxima compra para calmar la situación'
+    ], correcta:1 },
+  { area:'comunicacion', texto:'Al enviar una propuesta por email, ¿qué aumenta más la probabilidad de que sea leída y respondida?',
+    opciones:[
+      'Incluir toda la información posible para que el cliente tenga todo en un lugar',
+      'Un asunto personalizado, un mensaje breve que referencia la conversación y un próximo paso claro',
+      'Adjuntar el catálogo completo de productos para que vea el alcance',
+      'Copiar al gerente de ventas para mostrar respaldo institucional'
+    ], correcta:1 },
+
+  // ── GESTIÓN ─────────────────────────────────────────
+  { area:'gestion', texto:'Llevas 3 semanas sin cerrar ninguna venta. ¿Cuál es el primer paso inteligente?',
+    opciones:[
+      'Aumentar la cantidad de llamadas y visitas para compensar',
+      'Revisar en qué punto del proceso se están cayendo las oportunidades',
+      'Pedir al gerente que te baje el objetivo del mes',
+      'Ofrecer más descuentos para destrabar las oportunidades abiertas'
+    ], correcta:1 },
+  { area:'gestion', texto:'¿Con qué frecuencia deberías revisar tus oportunidades de venta activas?',
+    opciones:[
+      'Una vez al mes en la reunión de resultados',
+      'Solo cuando hay problemas evidentes',
+      'Semanalmente para detectar cuáles están trabadas y actuar a tiempo',
+      'Antes de fin de mes para apurar los cierres'
+    ], correcta:2 },
+  { area:'gestion', texto:'Al arrancar la semana, ¿cómo priorizás a quién contactar primero?',
+    opciones:[
+      'Los clientes más cercanos geográficamente para optimizar los viajes',
+      'Los que llevan más tiempo sin noticias para no perderlos',
+      'Las oportunidades con más probabilidad de cierre y mayor valor potencial',
+      'Primero terminás los pendientes administrativos para tener la cabeza despejada'
+    ], correcta:2 },
+  { area:'gestion', texto:'¿Qué número te dice más sobre la efectividad real de tu proceso de ventas?',
+    opciones:[
+      'La cantidad de ventas cerradas en el mes',
+      'De cada 10 propuestas que enviás, cuántas se terminan convirtiendo',
+      'Cuántas llamadas hacés por día',
+      'El descuento promedio que das para cerrar'
+    ], correcta:1 },
+  { area:'gestion', texto:'Cerraste una venta importante. ¿Qué hacés en los próximos 30 días?',
+    opciones:[
+      'Pasás al siguiente prospecto; el trabajo de ventas ya terminó',
+      'Contactás al cliente para asegurarte que todo salió bien y que esté satisfecho',
+      'Esperás a que el cliente te contacte si tiene algún problema',
+      'Le pedís que te dé referidos antes de que haga el primer uso del producto'
+    ], correcta:1 },
+
+  // ── REDES SOCIALES Y PRESENCIA DIGITAL ──────────────
+  { area:'redes', texto:'Un prospecto te vio en LinkedIn y te mandó un mensaje preguntando por tus servicios. ¿Cómo respondés?',
+    opciones:[
+      'Le enviás el catálogo completo y el precio para que evalúe',
+      'Respondés rápido, agradecés el contacto y hacés una pregunta para entender su situación antes de ofrecer algo',
+      'Le pedís su teléfono para llamarlo y no perder tiempo en mensajes',
+      'Le enviás un link al sitio web para que busque la información que necesita'
+    ], correcta:1 },
+  { area:'redes', texto:'¿Con qué frecuencia deberías publicar contenido en LinkedIn si usás la red para generar contactos comerciales?',
+    opciones:[
+      'Una vez por mes es suficiente para mantener presencia',
+      'Todos los días, aunque sea contenido genérico para aparecer en el feed',
+      'Entre 2 y 4 veces por semana con contenido que aporte valor real a tu audiencia',
+      'Solo cuando tenés algo importante que vender o anunciar'
+    ], correcta:2 },
+  { area:'redes', texto:'Un cliente te deja una reseña negativa pública en Google o redes sociales. ¿Qué hacés?',
+    opciones:[
+      'Ignorás la reseña; contestar solo le da más visibilidad',
+      'Respondés públicamente de forma agresiva para defender tu reputación',
+      'Respondés públicamente con calma, reconocés la situación y ofrecés resolverla por un canal privado',
+      'Le pedís a la plataforma que elimine la reseña'
+    ], correcta:2 },
+  { area:'redes', texto:'Antes de una reunión importante con un prospecto que no conocés, ¿qué hacés en redes?',
+    opciones:[
+      'Nada especial; la información relevante surge en la reunión',
+      'Revisás su perfil de LinkedIn, el sitio de su empresa y sus últimas publicaciones para entender su contexto',
+      'Lo agregás como contacto en LinkedIn para que vea que investigaste',
+      'Le mandás un mensaje previo presentándote para romper el hielo'
+    ], correcta:1 },
+  { area:'redes', texto:'Te piden que compartas en redes sociales un contenido de la empresa que te parece que no es del todo verdadero. ¿Qué hacés?',
+    opciones:[
+      'Lo compartís igual; es contenido oficial de la empresa',
+      'Lo compartís pero agregás tu propia opinión para matizarlo',
+      'Planteás tu duda internamente antes de publicarlo',
+      'Lo ignorás sin decir nada'
+    ], correcta:2 },
+];
+
+// ═══════════════════════════════════════════════════════
+//  CANVAS BG
+// ═══════════════════════════════════════════════════════
+(function(){
+  const c=document.getElementById('bg-canvas');
+  const ctx=c.getContext('2d');
+  let W,H,pts;
+  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
+  function init(){pts=Array.from({length:120},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.05,vy:(Math.random()-.5)*.05,r:Math.random()*.9+.1,op:Math.random()*.4+.05,gold:Math.random()<.12}))}
+  let t=0;
+  function draw(){ctx.clearRect(0,0,W,H);t+=.005;
+    pts.forEach(p=>{
+      const a=p.op*(0.5+0.5*Math.sin(t+p.r));
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=p.gold?`rgba(212,175,55,${a*1.3})`:`rgba(240,235,220,${a*.6})`;
+      ctx.fill();p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+    });requestAnimationFrame(draw);}
+  resize();init();draw();window.addEventListener('resize',()=>{resize();init();});
+})();
+
+// ═══════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════
+const setLoad = (msg, pct) => {
+  document.getElementById('load-msg').textContent = msg;
+  document.getElementById('load-bar').style.width = pct + '%';
+};
+const showScreen = id => {
+  ['screen-access','screen-exam','screen-result'].forEach(s=>{
+    document.getElementById(s).classList.toggle('hidden', s!==id);
+  });
+};
+const hideLoad = () => {
+  const ov = document.getElementById('load-overlay');
+  ov.style.opacity='0';
+  setTimeout(()=>ov.classList.add('hidden'),400);
+};
+const sbFetch = (table, method, body, query='') =>
+  fetch(`${SB_URL}/rest/v1/${table}${query}`, {method, headers:SB_H, ...(body?{body:JSON.stringify(body)}:{})}).then(r=>r.json());
+
+// ═══════════════════════════════════════════════════════
+//  INIT — cargar API key, verificar si viene con token en URL
+// ═══════════════════════════════════════════════════════
+async function init(){
+  setLoad('Cargando configuración...', 25);
+
+  // Cargar Anthropic key desde localStorage o Supabase
+  ANTHROPIC_KEY = localStorage.getItem('METO_anthropic_key') || '';
+  if(!ANTHROPIC_KEY || !ANTHROPIC_KEY.startsWith('sk-')){
+    try{
+      const cfg = await sbFetch('sueldos_config','GET',null,'?key=eq.anthropic_api_key');
+      if(cfg&&cfg[0]?.data?.key) ANTHROPIC_KEY = cfg[0].data.key;
+    }catch(e){}
+  }
+
+  setLoad('Listo', 100);
+
+  // ¿Viene con examen_token en URL? (enviado por el agente)
+  const params = new URLSearchParams(window.location.search);
+  const tok = params.get('examen_token');
+  if(tok && tok.length >= 4){
+    document.getElementById('code-input').value = tok.toUpperCase();
+    hideLoad();
+    showScreen('screen-access');
+    // auto-verificar
+    setTimeout(()=>verificarCodigo(), 400);
+    return;
+  }
+
+  hideLoad();
+  showScreen('screen-access');
+
+  // Focus en input
+  setTimeout(()=>document.getElementById('code-input').focus(), 500);
+}
+
+// ═══════════════════════════════════════════════════════
+//  VERIFICAR CÓDIGO
+// ═══════════════════════════════════════════════════════
+async function verificarCodigo(){
+  const input = document.getElementById('code-input');
+  const errEl = document.getElementById('access-error');
+  const btn   = document.getElementById('btn-access');
+  const codigo = input.value.trim().toUpperCase();
+
+  errEl.textContent = '';
+  if(codigo.length < 4){ errEl.textContent = 'El código debe tener al menos 4 caracteres'; input.classList.add('error'); setTimeout(()=>input.classList.remove('error'),500); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+
+  try{
+    // 1. Buscar en Supabase tabla examen_codigos
+    let data = null;
+    const res = await sbFetch('examen_codigos','GET',null,`?codigo=eq.${codigo}&activo=eq.true`);
+    if(Array.isArray(res) && res.length > 0){
+      data = res[0];
+    }
+
+    // 2. Si no está en Supabase, buscar en localStorage como caché (fallback)
+    if(!data){
+      const cache = JSON.parse(localStorage.getItem('bpc_exam_codigos')||'[]');
+      const local = cache.find(c=>c.codigo===codigo && c.activo!==false);
+      if(local) data = local;
+    }
+
+    if(!data){
+      errEl.textContent = '❌ Código no encontrado. Verificá que esté bien escrito.';
+      input.classList.add('error');
+      setTimeout(()=>input.classList.remove('error'),500);
+      btn.disabled=false; btn.textContent='Acceder al examen →';
+      return;
+    }
+
+    if(data.usado){
+      errEl.textContent = '⚠️ Este código ya fue utilizado. Pedí uno nuevo a tu supervisor.';
+      btn.disabled=false; btn.textContent='Acceder al examen →';
+      return;
+    }
+
+    // Validar tipo: debe ser vendedor/auditoria o genérico
+    const tipoValido = !data.tipo || data.tipo === 'auditoria' || data.tipo === 'reclutamiento' || data.tipo === 'standalone';
+    if(!tipoValido){
+      errEl.textContent = '⚠️ Este código no corresponde al examen de vendedores.';
+      btn.disabled=false; btn.textContent='Acceder al examen →';
+      return;
+    }
+
+    codigoData = data;
+    iniciarExamen();
+
+  }catch(e){
+    console.error(e);
+    errEl.textContent = '❌ Error de conexión. Intentá de nuevo.';
+    btn.disabled=false; btn.textContent='Acceder al examen →';
+  }
+}
+
+// ── Input: enter key
+document.getElementById('code-input').addEventListener('keydown', e=>{ if(e.key==='Enter') verificarCodigo(); });
+
+// ═══════════════════════════════════════════════════════
+//  INICIAR EXAMEN
+// ═══════════════════════════════════════════════════════
+function iniciarExamen(){
+  document.getElementById('exam-empresa-label').textContent = codigoData.empresa || '';
+  qActual = 0;
+  respuestas = {};
+  showScreen('screen-exam');
+  renderQ();
+}
+
+function renderQ(){
+  const q = PREGUNTAS[qActual];
+  const total = PREGUNTAS.length;
+  const area = AREAS.find(a=>a.id===q.area);
+
+  document.getElementById('q-section').textContent = area?.label || '';
+  document.getElementById('q-counter').textContent = `Pregunta ${qActual+1} de ${total}`;
+  document.getElementById('exam-counter-label').textContent = `Pregunta ${qActual+1} de ${total}`;
+  document.getElementById('exam-section-label').textContent = area?.label || '';
+  document.getElementById('q-text').textContent = q.texto;
+  document.getElementById('exam-progress-fill').style.width = ((qActual/total)*100)+'%';
+
+  const optsEl = document.getElementById('q-options');
+  optsEl.innerHTML = q.opciones.map((op,i)=>`
+    <button class="q-option${respuestas[qActual]===i?' selected':''}" onclick="seleccionar(${i})">${op}</button>
+  `).join('');
+
+  document.getElementById('btn-prev').disabled = qActual===0;
+  const isLast = qActual === total-1;
+  const btnNext = document.getElementById('btn-next');
+  btnNext.textContent = isLast ? 'Finalizar examen ✓' : 'Siguiente →';
+  btnNext.className = 'btn-nav primary';
+
+  const contestadas = Object.keys(respuestas).length;
+  document.getElementById('nav-info').textContent = `${contestadas}/${total} contestadas`;
+}
+
+function seleccionar(optIdx){
+  respuestas[qActual] = optIdx;
+  document.querySelectorAll('.q-option').forEach((el,i)=>{
+    el.classList.toggle('selected', i===optIdx);
+  });
+  document.getElementById('nav-info').textContent = `${Object.keys(respuestas).length}/${PREGUNTAS.length} contestadas`;
+}
+
+function prevQ(){
+  if(qActual>0){ qActual--; renderQ(); }
+}
+
+function nextQ(){
+  if(qActual < PREGUNTAS.length-1){
+    qActual++;
+    renderQ();
+  } else {
+    // verificar que todas estén contestadas
+    const faltantes = PREGUNTAS.length - Object.keys(respuestas).length;
+    if(faltantes > 0){
+      if(!confirm(`Aún te faltan ${faltantes} pregunta${faltantes>1?'s':''} sin responder. ¿Querés finalizar igual?`)) return;
+    }
+    finalizarExamen();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  FINALIZAR — calcular, guardar, generar informe
+// ═══════════════════════════════════════════════════════
+async function finalizarExamen(){
+  showScreen('screen-result');
+
+  // ── Calcular scores ──
+  const scoresPorArea = {};
+  AREAS.forEach(a=>{ scoresPorArea[a.id] = {correctas:0,total:0}; });
+  // ── Mostrar pantalla de agradecimiento inmediatamente ──
+  showScreen('screen-result');
+
+  PREGUNTAS.forEach((q,i)=>{
+    scoresPorArea[q.area].total++;
+    if(respuestas[i] === q.correcta) scoresPorArea[q.area].correctas++;
+  });
+  AREAS.forEach(a=>{ scoresPorArea[a.id].pct = Math.round(scoresPorArea[a.id].correctas/scoresPorArea[a.id].total*100); });
+
+  const totalCorrectas = AREAS.reduce((s,a)=>s+scoresPorArea[a.id].correctas,0);
+  const scoreGlobal   = Math.round(totalCorrectas/PREGUNTAS.length*100);
+  const nivel = scoreGlobal>=80?'EXPERTO':scoreGlobal>=60?'COMPETENTE':scoreGlobal>=40?'EN DESARROLLO':'INICIANDO';
+
+  // ── Guardar en Supabase en background ──
+  const fechaISO = new Date().toISOString();
+  const payload = {
+    codigo: codigoData.codigo,
+    nombre: codigoData.nombre,
+    empresa: codigoData.empresa,
+    tipo: codigoData.tipo || 'auditoria',
+    auditoria_id: codigoData.auditoriaId || codigoData.auditoria_id || null,
+    score: scoreGlobal,
+    nivel,
+    correctas: totalCorrectas,
+    total: PREGUNTAS.length,
+    areas: JSON.stringify(scoresPorArea),
+    respuestas: JSON.stringify(respuestas),
+    fecha: fechaISO,
+    informe_ia: null,
+    informe_ia_fecha: null,
+  };
+
+  let resultadoId = null;
+  try{
+    const ins = await fetch(`${SB_URL}/rest/v1/examen_resultados`, {
+      method:'POST', headers:SB_H, body:JSON.stringify(payload)
+    });
+    const insData = await ins.json();
+    if(Array.isArray(insData) && insData[0]?.id) resultadoId = insData[0].id;
+    await marcarCodigoUsado(codigoData.codigo);
+  }catch(e){ console.error('Error guardando resultado:', e); }
+
+  // ── Generar informe IA en background (sin mostrar al evaluado) ──
+  generarInformeIA(payload, resultadoId, scoresPorArea, scoreGlobal, nivel);
+}
+
+async function marcarCodigoUsado(codigo){
+  // Marcar en Supabase
+  try{
+    await fetch(`${SB_URL}/rest/v1/examen_codigos?codigo=eq.${codigo}`, {
+      method:'PATCH', headers:SB_H, body:JSON.stringify({usado:true, fecha_uso:new Date().toISOString()})
+    });
+  }catch(e){}
+  // Marcar en localStorage (caché)
+  try{
+    const cache = JSON.parse(localStorage.getItem('bpc_exam_codigos')||'[]');
+    const idx = cache.findIndex(c=>c.codigo===codigo);
+    if(idx>-1){ cache[idx].usado=true; localStorage.setItem('bpc_exam_codigos',JSON.stringify(cache)); }
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════
+//  INFORME IA
+// ═══════════════════════════════════════════════════════
+async function generarInformeIA(payload, resultadoId, scoresPorArea, scoreGlobal, nivel){
+  const loadingEl = document.getElementById('informe-loading');
+  const contentEl = document.getElementById('informe-content');
+
+  if(!ANTHROPIC_KEY || !ANTHROPIC_KEY.startsWith('sk-')){
+    loadingEl.innerHTML = '<span style="color:var(--muted);font-size:11px">Informe IA no disponible (sin API key configurada)</span>';
+    return;
+  }
+
+  const areasTexto = AREAS.map(a=>{
+    const s = scoresPorArea[a.id];
+    return `${a.label}: ${s.pct}% (${s.correctas}/${s.total} correctas)`;
+  }).join('\n');
+
+  const prompt = `Sos un evaluador de competencias comerciales de MetoGroup Latam S.A. Acabás de procesar el examen BPC:2026 de un vendedor. El examen evalúa 7 áreas: Cierre, Objeciones, Negociación, Ética Comercial, Comunicación, Gestión y Redes Sociales/Presencia Digital.
+
+DATOS:
+Nombre: ${payload.nombre}
+Empresa: ${payload.empresa}
+Score global: ${scoreGlobal}% — Nivel: ${nivel}
+
+RESULTADOS POR ÁREA:
+${areasTexto}
+
+Generá un análisis breve y accionable con EXACTAMENTE esta estructura. Respondé en texto plano, sin markdown, sin títulos con #:
+
+EVALUACIÓN GENERAL
+[2 oraciones describiendo el nivel general del vendedor con lenguaje directo. Mencioná el score y qué significa para la empresa.]
+
+FORTALEZAS DETECTADAS
+[2-3 fortalezas concretas basadas en los scores más altos. Una oración por fortaleza. Si Redes Sociales es fuerte, mencionalo explícitamente.]
+
+ÁREAS DE DESARROLLO PRIORITARIAS
+[2-3 brechas ordenadas por impacto. Una oración por brecha con la acción concreta. Si Redes Sociales es baja, señalá el impacto en la prospección digital.]
+
+RECOMENDACIÓN PARA EL EQUIPO
+[1 párrafo para el supervisor con recomendaciones concretas de cómo desarrollar a este vendedor, incluyendo si necesita formación en ventas digitales.]
+
+Tono: técnico, directo, español rioplatense. Sin relleno. Máximo 260 palabras.`;
+
+  try{
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:600,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await resp.json();
+    const texto = data.content?.[0]?.text || '';
+
+    if(texto){
+      loadingEl.style.display = 'none';
+      contentEl.style.display = 'block';
+      contentEl.innerHTML = texto.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+        if(l.match(/^(EVALUACIÓN GENERAL|FORTALEZAS DETECTADAS|ÁREAS DE DESARROLLO|RECOMENDACIÓN PARA EL EQUIPO)/i)){
+          return `<div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);margin:14px 0 6px;font-weight:700">${l}</div>`;
+        }
+        return `<div style="margin-bottom:6px">${l}</div>`;
+      }).join('');
+
+      // Guardar informe en Supabase
+      if(resultadoId){
+        try{
+          await fetch(`${SB_URL}/rest/v1/examen_resultados?id=eq.${resultadoId}`,{
+            method:'PATCH', headers:SB_H,
+            body:JSON.stringify({informe_ia:texto, informe_ia_fecha:new Date().toISOString()})
+          });
+        }catch(e){}
+      }
+    }
+  }catch(e){
+    console.error('Error generando informe IA:',e);
+    loadingEl.innerHTML = '<span style="color:var(--muted);font-size:11px">No se pudo generar el análisis automático.</span>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  ARRANCAR
+// ═══════════════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
